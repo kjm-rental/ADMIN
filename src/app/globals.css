@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f7f6;
+  --foreground: #143f40;
+  --ocean: #087f83;
+  --deep-teal: #143f40;
+  --sunset: #f6a783;
+  --sand: #edf4f2;
+  --off-white: #ffffff;
+  --muted: #536b69;
+}
+
+@theme inline {
+  --color-slate-400: #607571;
+  --color-slate-500: #536b69;
+  --color-slate-300: #a4b6b0;
+  --color-slate-200: #d6e1dd;
+  --color-slate-100: #edf2ef;
+  --color-slate-50: #f6f8f7;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-jakarta);
+  --color-ocean: var(--ocean);
+  --color-deep-teal: var(--deep-teal);
+  --color-sunset: var(--sunset);
+  --color-sand: var(--sand);
+  --color-off-white: var(--off-white);
+  --color-muted: var(--muted);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  margin: 0;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ocean) 22%, transparent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--ocean);
+  outline-offset: 3px;
+}
