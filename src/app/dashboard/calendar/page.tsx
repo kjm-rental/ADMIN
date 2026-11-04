@@ -1,9 +1,9 @@
+import { getBookingServices } from "@/services/booking-services";
+export const instant = false;
+import { connection } from "next/server";
 import { calendarPeriod } from "@/lib/calendar-period";
 import { checkedQueries } from "@/lib/query-results";
-import {
-  ReservationCalendar,
-  DailyMovements,
-} from "@/components/reservation-calendar";
+import { ReservationCalendar } from "@/components/reservation-calendar";
 import {
   addCalendarDays,
   monthGridKeys,
@@ -18,6 +18,7 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ view?: string; date?: string }>;
 }) {
+  await connection();
   const f = await searchParams,
     { supabase } = await requireAdmin();
   const view = ["day", "week", "month"].includes(f.view ?? "")
@@ -51,7 +52,7 @@ export default async function CalendarPage({
     supabase
       .from("bookings")
       .select(
-        "id,booking_reference,motorcycle_unit_id,motorcycle_model_id,start_at,end_at,status,expires_at",
+        "id,booking_reference,customer_id,motorcycle_unit_id,motorcycle_model_id,start_at,end_at,status,handover_at,expires_at,total_centavos",
       )
       .lt("start_at", queryEnd)
       .gte("end_at", queryStart)
@@ -61,6 +62,7 @@ export default async function CalendarPage({
         "confirmed",
         "active",
         "completed",
+        "cancelled",
       ]),
     supabase
       .from("motorcycle_unavailability")
@@ -72,6 +74,29 @@ export default async function CalendarPage({
       .select("id,internal_unit_code,motorcycle_model_id"),
     supabase.from("motorcycle_models").select("id,display_name"),
   ]).then(checkedQueries);
+  const bookingIds = (bookings ?? []).map((b) => b.id);
+  const customerIds = [...new Set((bookings ?? []).map((b) => b.customer_id))];
+  const [
+    { data: customers },
+    { data: verifications },
+    { data: payments },
+    { data: media },
+  ] = await Promise.all([
+    supabase.from("customers").select("id,full_name").in("id", customerIds),
+    supabase
+      .from("customer_verifications")
+      .select("id,booking_id,overall_status")
+      .in("booking_id", bookingIds),
+    supabase
+      .from("payment_events")
+      .select("booking_id,event_type,amount_centavos")
+      .in("booking_id", bookingIds),
+    supabase
+      .from("motorcycle_media")
+      .select("motorcycle_model_id,storage_path,is_primary,sort_order")
+      .order("sort_order"),
+  ]).then(checkedQueries);
+  const services = await getBookingServices(bookingIds);
   const events: CalendarReservation[] = [
     ...(bookings ?? [])
       .filter(
@@ -94,11 +119,61 @@ export default async function CalendarPage({
         start: b.start_at,
         end: b.end_at,
         status: b.status,
+        handoverAt: b.handover_at,
+        delivery:
+          services.find((service) => service.booking_id === b.id)?.delivery ??
+          undefined,
+        collection:
+          services.find((service) => service.booking_id === b.id)?.collection ??
+          undefined,
+        modelId: b.motorcycle_model_id ?? undefined,
+        customer:
+          customers?.find((c) => c.id === b.customer_id)?.full_name ??
+          "Customer",
+        verification: verifications?.find((v) => v.booking_id === b.id)
+          ?.overall_status,
+        verificationId: verifications?.find((v) => v.booking_id === b.id)?.id,
+        payment: (() => {
+          const paid = (payments ?? [])
+            .filter((p) => p.booking_id === b.id)
+            .reduce(
+              (sum, p) =>
+                sum +
+                (p.event_type === "payment"
+                  ? p.amount_centavos
+                  : -p.amount_centavos),
+              0,
+            );
+          return paid <= 0
+            ? "Unpaid · cash on pickup"
+            : paid < b.total_centavos
+              ? "Partially paid"
+              : "Paid";
+        })(),
+        imageUrl: (() => {
+          const images = (media ?? []).filter(
+            (m) => m.motorcycle_model_id === b.motorcycle_model_id,
+          );
+          const cover = images.find((m) => m.is_primary) ?? images[0];
+          return cover
+            ? supabase.storage
+                .from("motorcycle-catalog")
+                .getPublicUrl(cover.storage_path).data.publicUrl
+            : undefined;
+        })(),
       })),
     ...(blocks ?? []).map((b) => ({
       id: b.id,
       reference: "Maintenance",
-      motorcycle: b.reason,
+      motorcycle:
+        models?.find(
+          (m) =>
+            m.id ===
+            units?.find((u) => u.id === b.motorcycle_unit_id)
+              ?.motorcycle_model_id,
+        )?.display_name ?? "Motorcycle maintenance",
+      modelId: units?.find((u) => u.id === b.motorcycle_unit_id)
+        ?.motorcycle_model_id,
       unit:
         units?.find((u) => u.id === b.motorcycle_unit_id)?.internal_unit_code ??
         "Unit",
@@ -132,8 +207,8 @@ export default async function CalendarPage({
             Reservation calendar
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Visual schedule only. Database constraints remain the inventory
-            source of truth.
+            Plan pickups, follow active rentals, and see what needs attention.
+            Select a reservation to see its details.
           </p>
         </div>
         <div className="flex rounded-xl border border-slate-200 bg-white p-1">
@@ -172,7 +247,6 @@ export default async function CalendarPage({
           Today
         </Link>
         <span>Asia/Manila</span>
-        <span>Confirmed · Active · Pending · Completed · Maintenance</span>
       </div>
       {!events.length && (
         <p className="mb-4 rounded-xl border border-dashed p-4 text-sm text-slate-500">
@@ -184,8 +258,14 @@ export default async function CalendarPage({
         days={days}
         selectedMonth={key.slice(0, 7)}
         events={events}
+        now={loadedAt.getTime()}
+        today={new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Manila",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(loadedAt)}
       />
-      {view === "day" && <DailyMovements events={events} day={key} />}
     </div>
   );
 }

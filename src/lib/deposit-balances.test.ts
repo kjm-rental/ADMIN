@@ -75,3 +75,23 @@ describe("separate deposit liability", () => {
       depositBalance(d, [e(1, "case_opened"), e(2, "case_resolved")]),
     ).toMatchObject({ held: 0, unresolved: false }));
 });
+
+it("keeps approved deductions distinct from physical cash returned", () => {
+  const original = [e(1, "cash_collected", 12345), e(2, "cash_deducted", 2345)];
+  const snapshot = JSON.stringify(original);
+  expect(depositBalance(d, original)).toMatchObject({
+    collected: 12345,
+    deducted: 2345,
+    returned: 0,
+    held: 10000,
+  });
+  expect(
+    depositBalance(d, [...original, e(3, "cash_returned", 10000)]),
+  ).toMatchObject({
+    deducted: 2345,
+    returned: 10000,
+    held: 0,
+    status: "Settled with approved deductions",
+  });
+  expect(JSON.stringify(original)).toBe(snapshot);
+});

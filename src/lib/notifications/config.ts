@@ -1,4 +1,6 @@
 import "server-only";
+export const validOwnerChatId = (value: string) =>
+  /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value));
 export type NotificationConfig = ReturnType<typeof readNotificationConfig>;
 export function readNotificationConfig(
   env: Record<string, string | undefined> = process.env,
@@ -14,8 +16,8 @@ export function readNotificationConfig(
           : ("disabled" as const),
     externalApproved,
     telegramToken: env.TELEGRAM_BOT_TOKEN || "",
-    telegramChatId: env.TELEGRAM_OPERATIONS_CHAT_ID || "",
-    telegramVerified: env.TELEGRAM_OPERATIONS_VERIFIED === "true",
+    telegramChatId: env.TELEGRAM_OWNER_CHAT_ID || "",
+    telegramVerified: validOwnerChatId(env.TELEGRAM_OWNER_CHAT_ID || ""),
     resendKey: env.RESEND_API_KEY || "",
     resendTestEnabled: !production && env.RESEND_TEST_ENABLED === "true",
     resendFrom: env.RESEND_FROM_EMAIL || "",
@@ -31,7 +33,7 @@ export function safeConfigurationStatus(config = readNotificationConfig()) {
     mode: config.mode,
     externalApproved: config.externalApproved,
     telegramConfigured: Boolean(
-      config.telegramToken && /^-\d+$/.test(config.telegramChatId),
+      config.telegramToken && validOwnerChatId(config.telegramChatId),
     ),
     telegramVerified: config.telegramVerified,
     resendConfigured: Boolean(config.resendKey && config.resendFrom),

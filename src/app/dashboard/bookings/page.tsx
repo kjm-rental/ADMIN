@@ -1,3 +1,5 @@
+export const instant = false;
+import { connection } from "next/server";
 import { checkedQueries } from "@/lib/query-results";
 import { matchesBookingSearch } from "@/lib/booking-search";
 import { StatusBadge, formatDate } from "@/components/admin-ui";
@@ -9,6 +11,7 @@ export default async function BookingsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; verification?: string }>;
 }) {
+  await connection();
   const f = await searchParams,
     { supabase } = await requireAdmin();
   const [
@@ -34,6 +37,14 @@ export default async function BookingsPage({
       .select("booking_id,name_snapshot,quantity"),
   ]).then(checkedQueries);
   if (error) throw new Error(error.message);
+  const { data: adminOrigins, error: originError } = await supabase
+    .from("booking_admin_details")
+    .select("booking_id,source");
+  if (originError && !["42P01", "PGRST205"].includes(originError.code))
+    throw Error("Booking origins could not be loaded.");
+  const origins = new Map(
+    (adminOrigins ?? []).map((item) => [item.booking_id, item.source]),
+  );
   const q = (f.q ?? "").toLowerCase(),
     status = f.status ?? "all",
     verification = f.verification ?? "all";
@@ -58,7 +69,12 @@ export default async function BookingsPage({
       <p className="text-xs font-extrabold tracking-[.16em] text-ocean uppercase">
         Operations
       </p>
-      <h1 className="mt-2 text-3xl font-extrabold text-deep-teal">Bookings</h1>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-extrabold text-deep-teal">Bookings</h1>
+        <Link href="/dashboard/bookings/new" className="admin-btn-primary">
+          + New Booking
+        </Link>
+      </div>
       <p className="mt-2 text-sm text-slate-500">
         Reservation requests require verification and availability approval.
       </p>
@@ -148,6 +164,12 @@ export default async function BookingsPage({
                       className="font-bold text-ocean"
                     >
                       {b.booking_reference}
+                      {origins.has(b.id) && (
+                        <span className="ml-2 admin-badge">
+                          Admin Booking ·{" "}
+                          {origins.get(b.id)?.replaceAll("_", " ")}
+                        </span>
+                      )}
                       {b.is_test && (
                         <span className="ml-2 admin-badge">Test</span>
                       )}

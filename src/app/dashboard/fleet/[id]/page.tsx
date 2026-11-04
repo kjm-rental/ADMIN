@@ -1,9 +1,11 @@
+export const instant = false;
+import { connection } from "next/server";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
 import { checkedQueries } from "@/lib/query-results";
 import { ConfirmButton } from "@/components/confirm-button";
 import Image from "next/image";
-import { InventoryQuantityForm } from "@/components/inventory-quantity-form";
+import { MotorcycleUnitForm } from "@/components/motorcycle-unit-form";
 import { inventorySummary } from "@/lib/inventory";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -17,15 +19,17 @@ import {
 import { MediaUploadForm } from "@/components/media-upload-form";
 import { ModelForm } from "@/components/model-form";
 import { requireAdmin } from "@/lib/auth";
+import { unitLifecycleMessages } from "@/lib/motorcycle-unit-lifecycle";
 export default async function ModelPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; unitAction?: string }>;
 }) {
+  await connection();
   const { id } = await params;
-  const { saved } = await searchParams;
+  const { saved, unitAction } = await searchParams;
   const { supabase } = await requireAdmin();
   const [{ data: model }, { data: rates }, { data: units }, { data: media }] =
     await Promise.all([
@@ -53,13 +57,15 @@ export default async function ModelPage({
       .select("motorcycle_unit_id,status")
       .eq("motorcycle_model_id", id)
       .in("status", ["submitted", "pending", "confirmed", "active"]),
-    supabase
-      .from("booking_inventory_holds")
-      .select("motorcycle_unit_id,expires_at,released_at,converted_at")
-      .in(
-        "motorcycle_unit_id",
-        (units ?? []).map((u) => u.id),
-      ),
+    units?.length
+      ? supabase
+          .from("booking_inventory_holds")
+          .select("motorcycle_unit_id,expires_at,released_at,converted_at")
+          .in(
+            "motorcycle_unit_id",
+            (units ?? []).map((u) => u.id),
+          )
+      : Promise.resolve({ data: [], error: null }),
   ]).then(checkedQueries);
   if (bookingError || holdError)
     throw new Error("Inventory commitments could not be loaded.");
@@ -77,6 +83,14 @@ export default async function ModelPage({
           className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700"
         >
           Motorcycle details saved successfully.
+        </p>
+      )}
+      {unitAction && Object.hasOwn(unitLifecycleMessages, unitAction) && (
+        <p
+          role="status"
+          className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700"
+        >
+          {unitLifecycleMessages[unitAction]}
         </p>
       )}
       <header className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -131,8 +145,8 @@ export default async function ModelPage({
           Motorcycle inventory
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          Manage quantities without entering registration plates or internal
-          codes.
+          Add each motorcycle manually for {model.display_name}. Plates stay
+          private; colors are offered to customers.
         </p>
         <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {Object.entries(summary).map(([label, count]) => (
@@ -146,7 +160,36 @@ export default async function ModelPage({
             </div>
           ))}
         </dl>
-        <InventoryQuantityForm modelId={id} total={summary.total} />
+        <details className="mt-5 rounded-xl border border-slate-200 p-4">
+          <summary className="cursor-pointer font-bold text-ocean">
+            Add motorcycle unit · {model.display_name}
+          </summary>
+          <MotorcycleUnitForm modelId={id} modelName={model.display_name} />
+        </details>
+        <div className="mt-5 space-y-3">
+          {(units ?? []).map((unit) => (
+            <details
+              key={unit.id}
+              className="rounded-xl border border-slate-200 p-4"
+            >
+              <summary className="cursor-pointer text-sm font-semibold">
+                {model.display_name} ·{" "}
+                {unit.registration_plate || "Plate not configured"} ·{" "}
+                {unit.color || "Color not configured"} · {unit.status}
+              </summary>
+              <MotorcycleUnitForm
+                modelId={id}
+                modelName={model.display_name}
+                unit={unit}
+              />
+            </details>
+          ))}
+          {!units?.length && (
+            <p className="text-sm text-slate-500">
+              No units yet. Add actual motorcycles individually above.
+            </p>
+          )}
+        </div>
         <p className="mt-4 text-xs text-slate-500">
           Reserved includes future confirmed bookings and live holds, counted
           once per unit. Availability for specific rental dates is checked

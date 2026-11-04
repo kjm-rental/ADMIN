@@ -1,5 +1,18 @@
 import { requireAdmin } from "@/lib/auth";
 import { isMissingDepositSchema } from "@/lib/security-deposits";
+// Settings pages need one configuration row, never the entire rental ledger.
+export async function getSecurityDepositSettings() {
+  const { supabase } = await requireAdmin();
+  const result = await supabase
+    .from("security_deposit_settings")
+    .select("*")
+    .maybeSingle();
+  if (isMissingDepositSchema(result.error))
+    return { available: false as const, settings: null };
+  if (result.error || !result.data)
+    throw Error("Security deposit settings could not be loaded.");
+  return { available: true as const, settings: result.data };
+}
 export async function getSecurityDepositView(bookingId?: string) {
   const { supabase } = await requireAdmin();
   const settings = await supabase

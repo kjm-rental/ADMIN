@@ -4,9 +4,11 @@ import { submitAdminAction } from "@/app/actions/feedback";
 export function ActionForm({
   action,
   children,
+  successMessage = "Change saved successfully.",
   ...props
 }: Omit<React.FormHTMLAttributes<HTMLFormElement>, "action" | "onSubmit"> & {
   action: (data: FormData) => Promise<void>;
+  successMessage?: string;
 }) {
   const [state, formAction, pending] = useActionState(
     submitAdminAction.bind(null, action),
@@ -47,7 +49,7 @@ export function ActionForm({
       )}
       {!pending && state.saved && (
         <p role="status" className="mt-2 text-sm text-emerald-700">
-          Change saved successfully.
+          {successMessage}
         </p>
       )}
     </form>

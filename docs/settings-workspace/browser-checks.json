@@ -1,0 +1,20 @@
+{
+  "fixtureOnly": true,
+  "estimateText": "Estimate a transaction\n\nPercentage plus fixed fee, rounded to the nearest centavo. Additional taxes or provider-specific deductions are not included.\n\nTransaction amount (PHP)\nEstimated gateway cost\n\u20b150.00\nEstimated net proceeds\n\u20b1950.00",
+  "editsPreservedAcrossSections": true,
+  "saveActionStubbed": true,
+  "viewports": [
+    {
+      "viewport": "desktop",
+      "width": 1440,
+      "scroll": 1440
+    },
+    {
+      "viewport": "mobile",
+      "width": 390,
+      "scroll": 390
+    }
+  ],
+  "errors": [],
+  "externalHttpRequests": []
+}

@@ -3,6 +3,9 @@ import { createHash } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { readNotificationConfig, type NotificationConfig } from "./config";
+import { renderTelegramOwnerNotification } from "./telegram-owner";
+import { approvedUrl } from "./templates";
+import { validOwnerChatId } from "./config";
 import { renderNotification } from "./templates";
 import { createTransport, retryDelay, type Transport } from "./transports";
 import {
@@ -45,9 +48,28 @@ export async function deliverClaimed(
     );
     if (error) throw Error("Notification recipient lookup failed");
     const recipient = record(context).recipient;
-    let rendered;
+    let rendered:
+      | (ReturnType<typeof renderNotification> & { telegramAdminUrl?: string })
+      | undefined;
     try {
       rendered = renderNotification(row.event_type, row.payload, config);
+      if (
+        row.channel === "telegram" &&
+        !row.is_test &&
+        config.mode === "live" &&
+        [
+          "booking_requested",
+          "booking_approved",
+          "booking_cancelled",
+          "verification_review",
+          "verification_action",
+        ].includes(row.event_type)
+      ) {
+        rendered = {
+          ...rendered,
+          ...(await renderTelegramOwnerNotification(db, row, config)),
+        };
+      }
     } catch {
       result = { outcome: "unsupported_template" };
     }
@@ -115,6 +137,7 @@ export async function processNotifications(
   config = readNotificationConfig(),
   db?: SupabaseClient<Database>,
   transport?: Transport,
+  channels: readonly ("telegram" | "resend")[] = ["telegram", "resend"],
 ) {
   if (config.mode === "disabled")
     return { mode: "disabled", processed: 0, sent: 0, failed: 0 };
@@ -125,7 +148,20 @@ export async function processNotifications(
   const totals = { mode: config.mode, processed: 0, sent: 0, failed: 0 };
   // One leased row at a time; serial providers avoid bursts and keep leases within 90s.
   // Invocation is bounded to two deliveries; external scheduler chooses the approved cadence.
-  for (const channel of ["telegram", "resend"] as const) {
+  for (const channel of channels) {
+    // Do not consume an owner queue lease when required configuration is absent.
+    if (
+      channel === "telegram" &&
+      config.mode === "live" &&
+      (!validOwnerChatId(config.telegramChatId) ||
+        !config.telegramToken ||
+        !approvedUrl(
+          config.adminBase,
+          "/dashboard/bookings",
+          config.development,
+        ))
+    )
+      continue;
     const claimed = await database.rpc("notification_claim", {
       p_channel: channel,
       p_mock: config.mode === "mock",

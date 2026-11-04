@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth";
+import { catalogUploadError } from "@/lib/catalog-upload";
+import { AdminActionError } from "@/lib/admin-action-error";
 
 const optionalText = z.preprocess(
   (value) => (value === "" ? null : value),
@@ -41,6 +43,10 @@ const modelSchema = z.object({
     z.url().nullable(),
   ),
   dailyRate: z.coerce.number().int().nonnegative(),
+  hourlyRate: z.preprocess(
+    (v) => (v === undefined ? undefined : v === "" ? null : Number(v)),
+    z.number().int().positive().nullable().optional(),
+  ),
   weeklyRate: optionalNumber,
   monthlyRate: optionalNumber,
   description: optionalText,
@@ -144,6 +150,9 @@ export async function saveModel(formData: FormData) {
     specification_note: d.specificationNote,
     specification_source_url: d.specificationSourceUrl,
     daily_rate_php: d.dailyRate,
+    ...(formData.has("hourlyRate") && (d.id || d.hourlyRate != null)
+      ? { hourly_extension_rate_php: d.hourlyRate ?? null }
+      : {}),
     is_published: d.published === "on",
     description: d.description,
     notable_features: d.features
@@ -218,28 +227,14 @@ export async function saveInventoryQuantity(
   _previous: { error: string; saved: boolean },
   formData: FormData,
 ): Promise<{ error: string; saved: boolean }> {
-  const parsed = z
-    .object({
-      modelId: z.uuid(),
-      total: z.coerce.number().int().min(0).max(1000),
-      expectedTotal: z.coerce.number().int().nonnegative(),
-    })
-    .safeParse(Object.fromEntries(formData));
-  if (!parsed.success)
-    return {
-      error: "Enter a whole-number quantity between 0 and 1000.",
-      saved: false,
-    };
-  const { supabase } = await requireAdmin();
-  const { error } = await supabase.rpc("admin_set_motorcycle_quantity", {
-    p_model_id: parsed.data.modelId,
-    p_total: parsed.data.total,
-    p_expected_total: parsed.data.expectedTotal,
-  });
-  if (error) return { error: error.message, saved: false };
-  revalidatePath(`/dashboard/fleet/${parsed.data.modelId}`);
-  revalidatePath("/dashboard/fleet");
-  return { error: "", saved: true };
+  void _previous;
+  void formData;
+  await requireAdmin();
+  return {
+    error:
+      "Add or edit individual motorcycle units in the inventory section. Quantity changes are disabled.",
+    saved: false,
+  };
 }
 
 export async function uploadMedia(formData: FormData) {
@@ -249,16 +244,8 @@ export async function uploadMedia(formData: FormData) {
   const files = formData
     .getAll("files")
     .filter((value): value is File => value instanceof File && value.size > 0);
-  if (!files.length) throw new Error("Choose at least one image.");
-  const allowed = ["image/avif", "image/webp", "image/jpeg", "image/png"];
-  if (files.length > 12)
-    throw new Error("Upload no more than 12 images at once.");
-  if (
-    files.some((file) => !allowed.includes(file.type) || file.size > 8_388_608)
-  )
-    throw new Error(
-      "Use an AVIF, WebP, JPEG, or PNG image no larger than 8 MB.",
-    );
+  const validationError = catalogUploadError(files);
+  if (validationError) throw new AdminActionError(validationError);
   const { count } = await session.supabase
     .from("motorcycle_media")
     .select("id", { count: "exact", head: true })

@@ -67,6 +67,7 @@ export async function recordSecurityDepositEvent(data: FormData) {
       eventType: z.enum([
         "cash_collected",
         "cash_returned",
+        "cash_deducted",
         "id_received",
         "id_returned",
         "case_opened",

@@ -53,7 +53,37 @@ export async function saveExtra(formData: FormData) {
       .then(checkedQuery);
     if (uploaded.error) throw new Error(uploaded.error.message);
   }
+  let compatibleModels =
+    formData.get("compatibilityConfigured") === "true"
+      ? z.array(z.uuid()).max(200).parse(formData.getAll("compatibleModelIds"))
+      : undefined;
+  const compatibleUnits =
+    formData.get("unitCompatibilityConfigured") === "true"
+      ? z.array(z.uuid()).max(1000).parse(formData.getAll("compatibleUnitIds"))
+      : undefined;
+  if (
+    formData.get("bikeScope") === "specific" &&
+    !/(?:top|back)[ _-]*box/i.test(d.name) &&
+    !compatibleUnits?.length
+  )
+    throw Error("Select at least one bike, or choose All bikes.");
+  if (compatibleUnits !== undefined) {
+    const { data: units, error } = await supabase
+      .from("motorcycle_units")
+      .select("id,motorcycle_model_id")
+      .in("id", compatibleUnits)
+      .is("archived_at", null);
+    if (error || (units?.length ?? 0) !== new Set(compatibleUnits).size)
+      throw Error("Choose valid, unarchived motorcycle units.");
+    compatibleModels = [
+      ...new Set((units ?? []).map((unit) => unit.motorcycle_model_id)),
+    ];
+  }
   const values = {
+    ...(compatibleUnits !== undefined
+      ? { compatible_unit_ids: compatibleUnits }
+      : {}),
+    ...(compatibleModels ? { compatible_model_ids: compatibleModels } : {}),
     name: d.name,
     description: d.description,
     price_php: d.pricePhp,

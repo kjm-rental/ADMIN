@@ -5,7 +5,10 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   revalidate: vi.fn(),
 }));
-vi.mock("@/lib/auth", () => ({ requireAdmin: mocks.requireAdmin }));
+vi.mock("@/lib/auth", () => ({
+  requireAdmin: mocks.requireAdmin,
+  getFreshAdminSession: mocks.requireAdmin,
+}));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
@@ -602,5 +605,56 @@ describe("Phase 8 correction action regressions", () => {
     });
     await expect(saveExtra(extra())).rejects.toThrow("Synthetic audit failure");
     expect(mocks.revalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe("manual identity approval safeguards", () => {
+  it("rejects approval without every manual evidence confirmation", async () => {
+    await expect(
+      reviewVerification(
+        form({
+          bookingId: id,
+          verificationId: other,
+          reviewType: "identity",
+          result: "approved",
+        }),
+      ),
+    ).rejects.toThrow("Confirm every");
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("records an explicit authorized identity review without approving other components", async () => {
+    const f = form({
+      bookingId: id,
+      verificationId: other,
+      reviewType: "identity",
+      result: "approved",
+      reason: "Original document authenticity and ownership checked",
+    });
+    for (const value of ["0", "1", "2", "3"]) f.append("reviewEvidence", value);
+    await expect(reviewVerification(f)).rejects.toThrow(
+      `REDIRECT:/dashboard/verifications/${other}?reviewed=1`,
+    );
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "admin_review_verification",
+      expect.objectContaining({
+        p_review_type: "identity",
+        p_result: "approved",
+      }),
+    );
+  });
+  it("does not send decisions if authorization fails", async () => {
+    mocks.requireAdmin.mockRejectedValue(new Error("Unauthorized"));
+    await expect(
+      reviewVerification(
+        form({
+          bookingId: id,
+          verificationId: other,
+          reviewType: "license",
+          result: "resubmission_required",
+          reason: "Clearer photo needed",
+        }),
+      ),
+    ).rejects.toThrow("Unauthorized");
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 });

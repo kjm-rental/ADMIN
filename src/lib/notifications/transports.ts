@@ -1,6 +1,7 @@
 import "server-only";
 import type { DeliveryMessage, DeliveryResult } from "./types";
-import type { NotificationConfig } from "./config";
+import { validOwnerChatId, type NotificationConfig } from "./config";
+import { approvedUrl } from "./templates";
 export type Transport = (message: DeliveryMessage) => Promise<DeliveryResult>;
 export const validEmail = (value: string) =>
   value.length <= 254 &&
@@ -40,7 +41,7 @@ export function createTransport(
       telegram &&
       (!config.telegramVerified ||
         !config.telegramToken ||
-        !/^-\d+$/.test(config.telegramChatId))
+        !validOwnerChatId(config.telegramChatId))
     )
       return { outcome: "configuration" };
     if (
@@ -118,6 +119,25 @@ async function sendProvider(
                 chat_id: config.telegramChatId,
                 text: message.telegramText,
                 link_preview_options: { is_disabled: true },
+                protect_content: true,
+                ...(message.telegramAdminUrl &&
+                approvedUrl(
+                  config.adminBase,
+                  new URL(message.telegramAdminUrl).pathname,
+                ) === message.telegramAdminUrl
+                  ? {
+                      reply_markup: {
+                        inline_keyboard: [
+                          [
+                            {
+                              text: "View Booking in Admin",
+                              url: message.telegramAdminUrl,
+                            },
+                          ],
+                        ],
+                      },
+                    }
+                  : {}),
               }
             : {
                 from: config.resendFrom,
@@ -164,4 +184,18 @@ async function sendProvider(
   } catch {
     return { outcome: telegram ? "delivery_ambiguous" : "transient" };
   }
+}
+
+/** Explicit admin-triggered connectivity test, separate from automatic delivery. */
+export function createTelegramOwnerTestTransport(
+  config: NotificationConfig,
+  fetcher: typeof fetch = fetch,
+): Transport {
+  return async (message) => {
+    if (message.channel !== "telegram" || !message.isTest)
+      return { outcome: "provider_rejected" };
+    if (!config.telegramToken || !validOwnerChatId(config.telegramChatId))
+      return { outcome: "configuration" };
+    return sendProvider(config, message, true, fetcher);
+  };
 }

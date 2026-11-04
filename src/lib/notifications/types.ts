@@ -1,4 +1,46 @@
 export const eventCatalog = {
+  payment_successful: {
+    title: "QRPh payment received",
+    subject: "KJM QRPh Payment Received",
+    heading: "Payment received",
+    body: "Your rental and service payment was verified by PayMongo. Booking confirmation and handover requirements remain separate. The refundable security deposit is collected separately in cash.",
+  },
+  document_checks_passed: {
+    title: "Document Checks Passed",
+    subject: "KJM preliminary document checks passed",
+    heading: "Document Checks Passed",
+    body: "Preliminary checks passed. Authenticity, identity ownership and motorcycle license eligibility still require authorized approval.",
+  },
+  verification_manual_review: {
+    title: "Identity manual review",
+    subject: "KJM identity review in progress",
+    heading: "Identity review in progress",
+    body: "Authorized review is required. This is not approval or rejection.",
+  },
+  verification_approved: {
+    title: "Identity verified",
+    subject: "KJM identity verification approved",
+    heading: "Verification approved",
+    body: "Your identity review has been approved. All remaining handover requirements still apply.",
+  },
+  verification_rejected: {
+    title: "Identity rejected",
+    subject: "KJM identity verification update",
+    heading: "Verification rejected",
+    body: "Sign in to your booking for the recorded decision and next steps. Do not email identity documents.",
+  },
+  admin_verification_review: {
+    title: "Customer documents received",
+    subject: "KJM documents received",
+    heading: "Documents ready for review",
+    body: "Review private documents in the secure dashboard.",
+  },
+  admin_manual_review: {
+    title: "Manual review required",
+    subject: "KJM manual review required",
+    heading: "Manual review required",
+    body: "Check the current verification status in the secure dashboard.",
+  },
   booking_requested: {
     title: "Booking request received",
     subject: "KJM Motorcycle Rental — Booking Request Received",
@@ -118,6 +160,17 @@ export type NotificationPayload = {
   pickupAt: string;
   returnAt: string;
   rentalCentavos: number;
+  delivery?: { address: string; areaName?: string; scheduledAt: string } | null;
+  collection?: {
+    address: string;
+    areaName?: string;
+    scheduledAt: string;
+  } | null;
+  deliveryFeeCentavos?: number;
+  collectionFeeCentavos?: number;
+  paymentMethod?: "cash" | "qrph";
+  paymentStatus?: "paid" | "unpaid";
+  rentalPricing?: unknown;
   depositOption: string;
   depositCentavos: number | null;
   amountCentavos: number | null;
@@ -197,5 +250,6 @@ export type DeliveryMessage = {
   html: string;
   text: string;
   telegramText: string;
+  telegramAdminUrl?: string;
   isTest: boolean;
 };

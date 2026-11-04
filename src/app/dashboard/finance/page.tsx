@@ -1,3 +1,5 @@
+export const instant = false;
+import { connection } from "next/server";
 import { CreditCard, RotateCcw, Wallet, Receipt } from "lucide-react";
 import {
   PageHeading,
@@ -16,6 +18,7 @@ export default async function FinancePage({
 }: {
   searchParams: Promise<{ scope?: string }>;
 }) {
+  await connection();
   const { scope } = await searchParams,
     data = await getOperationsView(),
     test = scope === "test";

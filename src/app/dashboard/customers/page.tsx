@@ -1,9 +1,12 @@
+export const instant = false;
+import { connection } from "next/server";
 import { checkedQueries } from "@/lib/query-results";
 import { StatusBadge } from "@/components/admin-ui";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 
 export default async function CustomersPage() {
+  await connection();
   const { supabase } = await requireAdmin();
   const [
     { data: customers, error },

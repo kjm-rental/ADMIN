@@ -1,7 +1,10 @@
 import { beforeEach, it, expect, vi } from "vitest";
 const mock = vi.hoisted(() => ({ auth: vi.fn(), from: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ requireAdmin: mock.auth }));
-import { getSecurityDepositView } from "./security-deposits";
+import {
+  getSecurityDepositView,
+  getSecurityDepositSettings,
+} from "./security-deposits";
 function query(result: { data: unknown; error: unknown }) {
   const q = {
     select: () => q,
@@ -57,4 +60,17 @@ it("fails when ledger queries fail", async () => {
   await expect(getSecurityDepositView()).rejects.toThrow(
     "records could not be loaded",
   );
+});
+
+it("settings-only reads do not load rental ledgers or inspection history", async () => {
+  mock.from.mockReturnValue(
+    query({ data: { id: true, cash_enabled: false }, error: null }),
+  );
+  expect(await getSecurityDepositSettings()).toMatchObject({
+    available: true,
+    settings: { id: true },
+  });
+  expect(mock.from.mock.calls.map((c) => c[0])).toEqual([
+    "security_deposit_settings",
+  ]);
 });

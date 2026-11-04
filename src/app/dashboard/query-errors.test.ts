@@ -1,3 +1,4 @@
+vi.mock("next/server", () => ({ connection: async () => undefined }));
 import { beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ requireAdmin: vi.fn() }));
 vi.mock("server-only", () => ({}));
@@ -48,7 +49,7 @@ it.each([
   ["Overview", () => Overview()],
   ["Bookings", () => Bookings({ searchParams: Promise.resolve({}) })],
   ["Calendar", () => Calendar({ searchParams: Promise.resolve({}) })],
-  ["Verification", () => Verification()],
+  ["Verification", () => Verification({ searchParams: Promise.resolve({}) })],
   ["Fleet", () => Fleet({ searchParams: Promise.resolve({}) })],
   ["Extras", () => Extras({ searchParams: Promise.resolve({}) })],
   ["Customers", () => Customers()],

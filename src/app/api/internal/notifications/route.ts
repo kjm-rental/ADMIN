@@ -1,4 +1,5 @@
 import { authorizedScheduler } from "@/lib/notifications/scheduler-auth";
+import { readNotificationConfig } from "@/lib/notifications/config";
 import { processNotifications } from "@/lib/notifications/worker";
 export async function POST(request: Request) {
   if (
@@ -9,7 +10,17 @@ export async function POST(request: Request) {
   )
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    return Response.json(await processNotifications());
+    // MAIN owns the branded Resend worker. This endpoint must never claim its email rows.
+    if (process.env.TELEGRAM_NOTIFICATIONS_ENABLED !== "true")
+      return Response.json({ status: "telegram_activation_required" });
+    return Response.json(
+      await processNotifications(
+        readNotificationConfig(),
+        undefined,
+        undefined,
+        ["telegram"],
+      ),
+    );
   } catch {
     return Response.json(
       {

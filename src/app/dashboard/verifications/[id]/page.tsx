@@ -1,17 +1,22 @@
+export const instant = false;
+import { connection } from "next/server";
+import { AutomaticDocumentScreening } from "@/components/automatic-document-screening";
 import Link from "next/link";
+import {
+  verificationLabel,
+  verificationQueueStatus,
+} from "@/lib/verification-display";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { checkedQueries } from "@/lib/query-results";
-import { Panel, StatusBadge, formatDate } from "@/components/admin-ui";
+import { StatusBadge, formatDate } from "@/components/admin-ui";
 import { VerificationReview } from "@/components/verification-review";
-import { ActionForm } from "@/components/action-form";
-import { ConfirmButton } from "@/components/confirm-button";
-import { transitionBooking } from "@/app/actions/bookings";
 export default async function VerificationPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params,
     { supabase } = await requireAdmin();
   const { data: v, error } = await supabase
@@ -55,96 +60,78 @@ export default async function VerificationPage({
       >
         ← Verification center
       </Link>
-      <h1 className="text-3xl font-extrabold text-deep-teal">
-        {c?.full_name} — document review
-      </h1>
-      <Panel title={b.booking_reference}>
-        <div className="grid gap-4 text-sm sm:grid-cols-2">
-          <p>
-            {model?.display_name}
-            <br />
-            {formatDate(b.start_at)} – {formatDate(b.end_at)}
-          </p>
-          <p>
-            {c?.email}
-            <br />
-            {c?.phone} · {c?.country_of_residence}
-          </p>
-          <p>
+      <header className="space-y-2">
+        <h1 className="text-2xl font-extrabold text-deep-teal">
+          {c?.full_name}
+        </h1>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+          <Link
+            href={`/dashboard/bookings/${b.id}`}
+            className="font-bold text-ocean"
+          >
+            Booking: {b.booking_reference}
+          </Link>
+          <span>{model?.display_name}</span>
+          <span>
             Booking: <StatusBadge value={b.status} />
-          </p>
-          <p>
-            Verification: <StatusBadge value={v.overall_status} />
-          </p>
-          <p>
-            Licence: {v.license_issuing_country} · expires{" "}
-            {v.license_expiration_date}
-            <br />
-            Declared categories: {v.permitted_vehicle_categories}
-          </p>
-          <p>
-            {v.customer_type === "international_visitor"
-              ? "Mandatory manual international identity and driving-document review."
-              : "Manual identity and driving-document review."}
-          </p>
+          </span>
+          <span>
+            Verification:{" "}
+            <strong className="text-deep-teal">
+              {verificationLabel(verificationQueueStatus(v))}
+            </strong>
+          </span>
         </div>
-        <Link
-          href={`/dashboard/bookings/${b.id}`}
-          className="mt-4 inline-block font-bold text-ocean underline"
-        >
-          Open booking details and pickup requirements
-        </Link>
-      </Panel>
+      </header>
       <VerificationReview
         verification={v}
-        documents={documents ?? []}
+        documents={(documents ?? []).map((d) => ({
+          id: d.id,
+          document_kind: d.document_kind,
+          mime_type: d.mime_type,
+          status: d.status,
+          created_at: d.created_at,
+          size_bytes: d.size_bytes,
+          replaced_at: d.replaced_at,
+        }))}
+        summary={<AutomaticDocumentScreening verification={v} />}
         bookingId={b.id}
       />
-      {["pending", "submitted", "confirmed"].includes(b.status) && (
-        <Panel title="Cancel associated booking">
-          <p className="mb-3 text-sm text-slate-500">
-            Use the existing controlled cancellation workflow if verification
-            fails. Rejecting a document does not silently cancel the
-            reservation.
-          </p>
-          <ActionForm action={transitionBooking}>
-            <input type="hidden" name="bookingId" value={b.id} />
-            <input type="hidden" name="status" value="cancelled" />
-            <label className="block text-sm font-bold">
-              Cancellation reason
-              <textarea
-                name="reason"
-                required
-                maxLength={2000}
-                className="mt-2 block w-full rounded-lg border p-3"
-              />
-            </label>
-            <ConfirmButton
-              message="Cancel this booking and release its reservation through the existing controlled workflow?"
-              className="admin-button mt-3"
-            >
-              Cancel reservation
-            </ConfirmButton>
-          </ActionForm>
-        </Panel>
-      )}
-      <Panel title="Verification audit history">
-        <ul className="space-y-3">
-          {reviews
-            ?.filter((r) => r.review_type !== "document_access")
-            .map((r) => (
-              <li key={r.id} className="rounded-xl bg-slate-50 p-4 text-sm">
-                <strong>
-                  {r.review_type} · {r.result.replaceAll("_", " ")}
-                </strong>
-                <p>{r.reason}</p>
+      <details className="text-sm">
+        <summary className="cursor-pointer py-3 font-bold text-deep-teal">
+          Verification History
+        </summary>
+        <ol className="space-y-3 border-l-2 border-teal-100 pl-4">
+          {[
+            ...(documents ?? []).map((d) => ({
+              id: d.id,
+              at: d.created_at,
+              title: `Document uploaded · ${d.document_kind.replaceAll("_", " ")}`,
+              reason: d.replaced_at ? "Superseded by a later upload" : "",
+            })),
+            ...(reviews ?? [])
+              .filter((r) => r.review_type !== "document_access")
+              .map((r) => ({
+                id: r.id,
+                at: r.created_at,
+                title: `${r.review_type.replaceAll("_", " ")} · ${verificationLabel(r.result)}`,
+                reason: r.reason,
+              })),
+          ]
+            .sort((a, b) => b.at.localeCompare(a.at))
+            .map((event) => (
+              <li key={event.id} className="rounded-lg bg-slate-50 p-3 text-sm">
+                <strong className="capitalize">{event.title}</strong>
+                {event.reason && (
+                  <p className="mt-1 text-slate-600">{event.reason}</p>
+                )}
                 <p className="mt-1 text-xs text-slate-500">
-                  Reviewer {r.reviewer_user_id} · {formatDate(r.created_at)}
+                  {formatDate(event.at)}
                 </p>
               </li>
             ))}
-        </ul>
-      </Panel>
+        </ol>
+      </details>
     </div>
   );
 }

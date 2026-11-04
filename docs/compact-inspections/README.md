@@ -1,0 +1,9 @@
+# Compact pickup and return inspections
+
+The existing booking deposit/inspection panel now uses a two-step compact form: motorcycle inspection, then accessories and confirmation. It reads booking/model/customer/unit details and payment, deposit, verification and license status under ADMIN authorization. Current odometer entry and fuel/condition selection remain explicit; previous unit inspection odometer is a reference only. Saved extra inclusions suggest only exact known accessory names; unknown/inferred inclusions are never assumed.
+
+Condition and selected accessories are mapped to the existing inspection text columns. Additional observations, missing items, damage and time corrections remain available. Return uses the saved pickup inspection as a reference and highlights mileage/fuel differences and known accessories not marked returned. No observation creates a financial charge, deduction or refund. There is no existing motorcycle-inspection photo upload flow, so private identity uploads are unchanged.
+
+The new server action calls the existing `admin_record_rental_inspection` RPC with fresh ADMIN authorization, validated details, stable idempotency key and automatic server timestamp (displayed in Asia/Manila). Retries reuse an existing inspection's actual timestamp so the immutable fingerprint stays stable. Existing database guards still enforce payment, deposit, current document review, riding eligibility, unit assignment/conflicts and inspection completeness. Only a successful RPC refreshes/redirects with the handover/return success message. No SQL change is required for this redesign.
+
+Validation: mocked action tests, rendered form tests, existing rental-operation tests and actual handover UI interactions using an existing booking. Unsaved example input was discarded with a page refresh. No live handover, inspection, return or financial event was saved; no database migration was executed.

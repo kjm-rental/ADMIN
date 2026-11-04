@@ -73,6 +73,20 @@ export function ModelForm({
           value={model?.daily_rate_php}
         />
         <Field
+          label="Hourly Extension Rate (PHP)"
+          name="hourlyRate"
+          type="number"
+          min="1"
+          step="1"
+          value={model?.hourly_extension_rate_php}
+          disabled={!!model && model.hourly_extension_rate_php === undefined}
+        />
+        {model && model.hourly_extension_rate_php === undefined && (
+          <p className="text-xs text-amber-800">
+            Hourly rate saving requires migration 032.
+          </p>
+        )}
+        <Field
           label="Weekly rate (optional)"
           name="weeklyRate"
           type="number"

@@ -1,3 +1,5 @@
+import { rentalDuration } from "@/lib/rental-duration";
+import { rentalPricingRows } from "@/lib/rental-pricing";
 import {
   eventCatalog,
   type NotificationEvent,
@@ -80,9 +82,42 @@ export function renderNotification(
     ["Motorcycle", motorcycle],
     ["Pickup · Philippine time", manilaTime(p.pickupAt)],
     ["Return · Philippine time", manilaTime(p.returnAt)],
+    ...rentalPricingRows(p.rentalPricing),
+    [
+      "Rental duration",
+      rentalDuration(p.pickupAt, p.returnAt)?.label ?? "See rental dates",
+    ],
     ["Rental amount", php(p.rentalCentavos)],
     ["Security deposit", deposit],
   ];
+  if (p.delivery || p.collection)
+    rows.push(
+      [
+        "Delivery",
+        p.delivery
+          ? `${p.delivery.areaName ?? ""} · ${clean(p.delivery.address, 500)} · ${manilaTime(p.delivery.scheduledAt)}`
+          : "Self pickup at KJM",
+      ],
+      [
+        "Collection",
+        p.collection
+          ? `${p.collection.areaName ?? ""} · ${clean(p.collection.address, 500)} · ${manilaTime(p.collection.scheduledAt)}`
+          : "Self return to KJM",
+      ],
+      ["Delivery fee", php(p.deliveryFeeCentavos ?? 0)],
+      ["Collection fee", php(p.collectionFeeCentavos ?? 0)],
+      ["Rental/services total", php(p.rentalCentavos)],
+    );
+  if (p.paymentMethod)
+    rows.push(
+      [
+        "Payment method",
+        p.paymentMethod === "qrph"
+          ? "QRPh via PayMongo"
+          : "Cash on Pickup / Delivery",
+      ],
+      ["Payment status", p.paymentStatus ?? "unpaid"],
+    );
   if (
     p.amountCentavos != null &&
     ["cash_payment", "deposit_collected", "deposit_returned"].includes(event)

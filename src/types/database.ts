@@ -20,6 +20,21 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booking_admin_details: {
+        Row: {
+          booking_id: string;
+          created_by: string;
+          source: string;
+          internal_notes: string;
+          adjustment: Json;
+          confirmation_reason: string;
+          revision: number;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       notification_settings: {
         Row: NotificationSettings;
         Insert: never;
@@ -65,6 +80,7 @@ export type Database = {
 
       motorcycle_models: {
         Row: {
+          hourly_extension_rate_php?: number | null;
           id: string;
           slug: string;
           brand: string;
@@ -111,6 +127,7 @@ export type Database = {
           motorcycle_model_id: string;
           internal_unit_code: string;
           registration_plate: string | null;
+          color: string | null;
           status: string;
           archived_at: string | null;
           created_at: string;
@@ -144,8 +161,11 @@ export type Database = {
       };
       bookings: {
         Row: {
+          manual_adjustment_php?: number;
+          rental_pricing?: Json | null;
           id: string;
           booking_reference: string;
+          selected_color: string | null;
           customer_id: string;
           motorcycle_unit_id: string | null;
           motorcycle_model_id: string | null;
@@ -182,6 +202,8 @@ export type Database = {
       };
       booking_extras_catalog: {
         Row: {
+          compatible_unit_ids?: string[];
+          compatible_model_ids?: string[];
           id: string;
           name: string;
           description: string | null;
@@ -198,6 +220,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          compatible_unit_ids?: string[];
+          compatible_model_ids?: string[];
           id?: string;
           name: string;
           description?: string | null;
@@ -309,8 +333,24 @@ export type Database = {
         >;
         Relationships: [];
       };
+      payment_gateway_fee_settings: {
+        Row: {
+          id: string;
+          provider: "paymongo" | "maya";
+          payment_method: "card" | "gcash" | "maya";
+          percentage_basis_points: number;
+          flat_fee_centavos: number;
+          notes: string;
+          updated_at: string;
+          updated_by: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       booking_settings: {
         Row: {
+          max_hourly_extension_hours?: number | null;
           id: boolean;
           timezone: string;
           operating_hours: Json | null;
@@ -350,6 +390,10 @@ export type Database = {
           entitlement_status: string;
           international_status: string;
           overall_status: string;
+          document_check_status?: string;
+          document_risk_level?: number | null;
+          document_review_reasons?: Json;
+          document_check_id?: string | null;
           license_issuing_country: string | null;
           license_expiration_date: string | null;
           permitted_vehicle_categories: string | null;
@@ -540,7 +584,7 @@ export type Database = {
           method: string;
           transaction_reference: string | null;
           occurred_at: string;
-          recorded_by: string;
+          recorded_by: string | null;
           internal_notes: string | null;
           idempotency_key: string;
           is_test: boolean;
@@ -553,6 +597,33 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      admin_manage_motorcycle_unit: {
+        Args: {
+          p_model_id: string;
+          p_unit_id: string;
+          p_operation: string;
+          p_expected_status: string;
+        };
+        Returns: Json;
+      };
+      get_motorcycle_color_availability: {
+        Args: { p_model_id: string; p_start_at: string; p_end_at: string };
+        Returns: { color: string; available_count: number }[];
+      };
+      get_verification_progress: {
+        Args: { p_booking_id: string };
+        Returns: Json;
+      };
+      admin_save_payment_gateway_fee: {
+        Args: {
+          p_provider: string;
+          p_payment_method: string;
+          p_percentage_basis_points: number;
+          p_flat_fee_centavos: number;
+          p_notes: string;
+        };
+        Returns: string;
+      };
       admin_save_notification_settings: {
         Args: { p_settings: Json };
         Returns: undefined;

@@ -90,3 +90,6 @@ next-env.d.ts
 /docs/phase9/production-public-settings.json
 /docs/screenshots/phase8/browser-results.json
 /docs/phase10/emails/
+
+# Private environment backup before isolated identity testing
+.identity-test-backup/

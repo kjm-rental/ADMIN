@@ -1,4 +1,5 @@
 "use server";
+import { AdminActionError } from "@/lib/admin-action-error";
 import { unstable_rethrow } from "next/navigation";
 export async function submitAdminAction(
   action: (data: FormData) => Promise<void>,
@@ -13,7 +14,9 @@ export async function submitAdminAction(
     unstable_rethrow(error);
     return {
       error:
-        "The action could not be completed. Review the current record before retrying; a partial change may have been saved.",
+        error instanceof AdminActionError
+          ? error.message
+          : "The action could not be completed. Review the current record before retrying; a partial change may have been saved.",
       saved: false,
     };
   }

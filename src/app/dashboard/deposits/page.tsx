@@ -26,7 +26,10 @@ export default async function DepositsPage({
       title="Security deposits"
       description="Refundable cash liabilities and legally approved document custody. Separate from rental revenue."
       actions={
-        <Link className="admin-button" href="/dashboard/settings">
+        <Link
+          className="admin-button"
+          href="/dashboard/settings?section=deposits"
+        >
           Deposit settings
         </Link>
       }

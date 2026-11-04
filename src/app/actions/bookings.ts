@@ -3,14 +3,14 @@ import { businessTimestamp } from "@/lib/business-time";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, getFreshAdminSession } from "@/lib/auth";
 
 export async function recordOfflinePayment(formData: FormData) {
   const d = z
     .object({
       bookingId: z.uuid(),
       amountPhp: z.coerce.number().positive().multipleOf(0.01),
-      method: z.literal("cash"),
+      method: z.enum(["cash", "bank_transfer", "other_offline"]),
       transactionReference: z.string().trim().max(200).optional(),
       paidAt: z.string().min(1),
       notes: z.string().trim().max(2000).optional(),
@@ -84,16 +84,49 @@ export async function reviewVerification(formData: FormData) {
     .parse(Object.fromEntries(formData));
   if (["rejected", "resubmission_required"].includes(d.result) && !d.reason)
     throw new Error("A review reason is required.");
-  const { supabase } = await requireAdmin();
+  const session = await getFreshAdminSession();
+  if (!session) throw new Error("Active administrator access required.");
+  const { supabase } = session;
+  const expected = {
+    identity: 4,
+    license: 5,
+    entitlement: 2,
+    international: 4,
+  }[d.reviewType];
+  if (
+    d.result === "approved" &&
+    !Array.from({ length: expected }, (_, i) => String(i)).every((value) =>
+      formData.getAll("reviewEvidence").includes(value),
+    )
+  )
+    throw new Error(
+      "Confirm every authenticity, ownership and license review requirement before approval.",
+    );
   const { error } = await supabase.rpc("admin_review_verification", {
     p_verification_id: d.verificationId,
     p_review_type: d.reviewType,
     p_result: d.result,
-    p_reason: d.reason || null,
+    p_reason:
+      d.result === "approved"
+        ? `${
+            {
+              identity:
+                "Authorized reviewer confirmed document authenticity, identity ownership, name consistency and document validity.",
+              license:
+                "Authorized reviewer checked the original license, customer ownership, required sides, validity and motorcycle rental requirements.",
+              entitlement:
+                "Authorized reviewer confirmed readable categories and legal eligibility for this customer to ride the booked motorcycle.",
+              international:
+                "Authorized reviewer confirmed required international documents, matching identity, validity and applicable international riding eligibility.",
+            }[d.reviewType]
+          }${d.reason ? ` Customer feedback: ${d.reason}` : ""}`.slice(0, 2000)
+        : d.reason || null,
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/dashboard/bookings/${d.bookingId}`);
-  redirect(`/dashboard/bookings/${d.bookingId}?reviewed=1`);
+  revalidatePath(`/dashboard/verifications/${d.verificationId}`);
+  revalidatePath("/dashboard/verifications");
+  redirect(`/dashboard/verifications/${d.verificationId}?reviewed=1`);
 }
 export async function confirmBooking(formData: FormData) {
   const d = z
@@ -150,4 +183,29 @@ export async function rescheduleBooking(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/bookings");
   redirect(`/dashboard/bookings/${d.bookingId}?updated=1`);
+}
+
+export async function recordPickupInstructions(formData: FormData) {
+  const d = z
+    .object({
+      bookingId: z.uuid(),
+      location: z.string().trim().min(1).max(1000),
+      instructions: z.string().trim().min(1).max(2000),
+    })
+    .parse(Object.fromEntries(formData));
+  const { supabase } = await requireAdmin();
+  const rpc = supabase.rpc.bind(supabase) as unknown as (
+    name: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: unknown }>;
+  const { error } = await rpc("admin_record_pickup_instructions", {
+    p_booking: d.bookingId,
+    p_location: d.location,
+    p_instructions: d.instructions,
+  });
+  if (error)
+    throw new Error(
+      "Pickup instructions could not be recorded. Check notification migration 031 and your reviewer access.",
+    );
+  revalidatePath(`/dashboard/bookings/${d.bookingId}`);
 }

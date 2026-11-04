@@ -1,3 +1,5 @@
+export const instant = false;
+import { connection } from "next/server";
 import { getSecurityDepositView } from "@/services/security-deposits";
 import { depositBalance } from "@/lib/deposit-balances";
 import Link from "next/link";
@@ -25,8 +27,11 @@ import { getOperationsView } from "@/services/operations-view";
 import { summarizePayments, manilaDay } from "@/lib/operational-summary";
 import { inventorySummary } from "@/lib/inventory";
 export default async function DashboardPage() {
-  const data = await getOperationsView();
-  const deposits = await getSecurityDepositView();
+  await connection();
+  const [data, deposits] = await Promise.all([
+    getOperationsView(),
+    getSecurityDepositView(),
+  ]);
   const liabilities = deposits.requirements
     .filter((d) => !d.is_test)
     .map((d) => depositBalance(d, deposits.events));

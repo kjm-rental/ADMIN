@@ -12,18 +12,20 @@ export function depositBalance(
     .sort((a, b) => a.sequence - b.sequence);
   let collected = 0,
     returned = 0,
+    deducted = 0,
     custody = 0,
     unresolved = false;
   for (const event of selected) {
     if (event.event_type === "cash_collected")
       collected += event.amount_centavos;
     if (event.event_type === "cash_returned") returned += event.amount_centavos;
+    if (event.event_type === "cash_deducted") deducted += event.amount_centavos;
     if (event.event_type === "id_received") custody++;
     if (event.event_type === "id_returned") custody--;
     if (event.event_type === "case_opened") unresolved = true;
     if (event.event_type === "case_resolved") unresolved = false;
   }
-  const held = collected - returned;
+  const held = collected - returned - deducted;
   const status = unresolved
     ? "Pending resolution"
     : requirement.option === "eligible_id"
@@ -35,13 +37,16 @@ export function depositBalance(
       : collected === 0
         ? "Not collected"
         : held === 0
-          ? "Fully returned"
+          ? deducted > 0
+            ? "Settled with approved deductions"
+            : "Fully returned"
           : returned > 0
             ? "Partially returned"
             : "Collected";
   return {
     collected,
     returned,
+    deducted,
     held,
     custody,
     unresolved,

@@ -10,7 +10,19 @@ export async function proxy(request: NextRequest) {
 
   if (!url || !key) return response;
 
+  if (request.nextUrl.pathname.startsWith("/api/internal/notifications"))
+    return response;
+
   const supabase = createServerClient(url, key, {
+    global: {
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          signal: init?.signal
+            ? AbortSignal.any([init.signal, AbortSignal.timeout(10000)])
+            : AbortSignal.timeout(10000),
+        }),
+    },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookies) {

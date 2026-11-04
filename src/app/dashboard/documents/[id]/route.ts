@@ -1,18 +1,36 @@
+import { z } from "zod";
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getFreshAdminSession } from "@/lib/auth";
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params,
-    { supabase, user } = await requireAdmin();
+  const { id } = await params;
+  if (!z.uuid().safeParse(id).success)
+    return new NextResponse("Document unavailable", {
+      status: 404,
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  const session = await getFreshAdminSession();
+  if (!session) return new NextResponse("Administrator sign-in required", { status: 401, headers: { "Cache-Control": "private, no-store" } });
+  const { supabase, user } = session;
   const { data: document, error: documentError } = await supabase
     .from("verification_documents")
-    .select("id,verification_id,storage_path")
+    .select("id,verification_id,storage_path,owner_user_id,booking_id")
     .eq("id", id)
     .maybeSingle();
   if (documentError)
     return new NextResponse("Document lookup failed", { status: 500 });
+  if (
+    document &&
+    !document.storage_path.startsWith(
+      document.owner_user_id ? `${document.owner_user_id}/${document.booking_id}/` : `guest/${document.booking_id}/`,
+    )
+  )
+    return new NextResponse("Document unavailable", {
+      status: 404,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   if (!document) return new NextResponse("Document not found", { status: 404 });
   const { data, error } = await supabase.storage
     .from("identity-verification")

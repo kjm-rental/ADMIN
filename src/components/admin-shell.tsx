@@ -8,6 +8,7 @@ import {
   BarChart3,
   Bike,
   BookOpen,
+  BookPlus,
   CalendarDays,
   CircleDollarSign,
   LayoutDashboard,
@@ -35,6 +36,12 @@ export const adminNavigation = [
     href: "/dashboard/bookings",
     label: "Bookings",
     icon: BookOpen,
+    group: "Operations",
+  },
+  {
+    href: "/dashboard/bookings/new",
+    label: "New Booking",
+    icon: BookPlus,
     group: "Operations",
   },
   {
@@ -115,9 +122,9 @@ export function AdminShell({
     menu.current?.focus();
   };
   const route =
-    adminNavigation.find(
-      (n) => n.href !== "/dashboard" && pathname.startsWith(n.href),
-    ) ?? adminNavigation[0];
+    adminNavigation
+      .filter((n) => pathname === n.href || pathname.startsWith(`${n.href}/`))
+      .sort((a, b) => b.href.length - a.href.length)[0] ?? adminNavigation[0];
   const sidebar = (mobile = false) => (
     <>
       <div className="admin-brand">
@@ -172,10 +179,7 @@ export function AdminShell({
             {adminNavigation
               .filter((n) => n.group === group)
               .map(({ href, label, icon: Icon }) => {
-                const active =
-                  href === "/dashboard"
-                    ? pathname === href
-                    : pathname.startsWith(href);
+                const active = href === route.href;
                 return (
                   <Link
                     key={href}

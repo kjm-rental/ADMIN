@@ -11,6 +11,10 @@ import { requireAdmin } from "@/lib/auth";
 import type { Json } from "@/types/database";
 
 const policySchema = z.object({
+  maxHourlyExtensionHours: z.preprocess(
+    (v) => (v === undefined ? undefined : v === "" ? null : Number(v)),
+    z.number().int().min(0).max(23).nullable().optional(),
+  ),
   dayCalculation: z.enum(["started_24_hours", "calendar_day"]).optional(),
   partialDayPricing: z
     .enum(["charge_full_day", "prorated", "not_allowed"])
@@ -44,6 +48,11 @@ export async function saveBookingSettings(formData: FormData) {
   });
   if (!parsed.success) redirect("/dashboard/settings?bookingError=invalid");
   const d = parsed.data;
+  if (
+    d.maxHourlyExtensionHours != null &&
+    d.dayCalculation !== "started_24_hours"
+  )
+    redirect("/dashboard/settings?bookingError=invalid");
   const acceptedIds = [
     ...new Set(
       d.acceptedIds
@@ -83,6 +92,9 @@ export async function saveBookingSettings(formData: FormData) {
     .from("booking_settings")
     .update({
       ...candidate,
+      ...(formData.has("maxHourlyExtensionHours")
+        ? { max_hourly_extension_hours: d.maxHourlyExtensionHours ?? null }
+        : {}),
       public_booking_enabled:
         requestedEnable && approved && !missing.length && technicalReady,
       policies_approved_at:

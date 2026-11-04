@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KJM settings local fixture</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f5f7f6;
+        color: #143f40;
+        font-family: Arial, sans-serif;
+      }
+      p,
+      h1,
+      h2,
+      h3,
+      h4,
+      dl,
+      dd {
+        margin: 0;
+      }
+      button,
+      select,
+      input,
+      textarea {
+        font: inherit;
+      }
+      button {
+        background: none;
+      }
+      fieldset {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        display: contents;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+      .fixture-shell {
+        max-width: 1160px;
+        margin: 30px auto;
+        padding: 0 24px;
+      }
+      .fixture-banner {
+        background: #fff3ce;
+        padding: 12px;
+        text-align: center;
+        font-size: 12px;
+      }
+      .fixture-placeholder {
+        padding: 28px;
+        border: 1px solid #d6e1dd;
+        background: white;
+        border-radius: 16px;
+      }
+      .fixture-placeholder input {
+        display: block;
+        margin: 15px 0;
+        padding: 12px;
+        border: 1px solid #d6e1dd;
+        width: 100%;
+      }
+      @media (max-width: 700px) {
+        .fixture-shell {
+          padding: 0 14px;
+          margin: 20px auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fixture-banner">
+      LOCAL DESIGN FIXTURE · Fictional settings · All save actions are stubbed ·
+      No database or payment access
+    </div>
+    <main id="root" class="fixture-shell"></main>
+    <script type="module" src="./main.jsx"></script>
+  </body>
+</html>

@@ -64,3 +64,35 @@ a {
   outline: 3px solid var(--ocean);
   outline-offset: 3px;
 }
+
+/* Reservation calendar: continuous periods with readable, keyboard-accessible controls. */
+.calendar-reservation {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border-width: 1px;
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 3px 7px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+}
+.calendar-reservation:hover {
+  filter: brightness(0.96);
+  box-shadow: 0 2px 8px #143f4014;
+  z-index: 2;
+}
+.calendar-reservation:focus-visible {
+  z-index: 3;
+}
+
+.calendar-reservation-month {
+  width: 100%;
+  border-radius: 6px;
+  border-left-width: 2px;
+  padding: 6px 7px;
+  font-size: 11px;
+  line-height: 15px;
+}

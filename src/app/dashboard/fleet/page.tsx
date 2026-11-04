@@ -1,3 +1,5 @@
+export const instant = false;
+import { connection } from "next/server";
 import { ActionForm } from "@/components/action-form";
 import { checkedQueries } from "@/lib/query-results";
 import { inventorySummary } from "@/lib/inventory";
@@ -18,6 +20,7 @@ export default async function FleetPage({
     page?: string;
   }>;
 }) {
+  await connection();
   const filters = await searchParams;
   const { supabase } = await requireAdmin();
   const [
@@ -188,7 +191,7 @@ export default async function FleetPage({
                       alt={`${model.display_name} catalog image`}
                       fill
                       sizes="(max-width:768px) 100vw,33vw"
-                      className="object-contain p-5"
+                      className="object-cover object-center"
                     />
                   ) : (
                     <div className="flex h-full flex-col items-center justify-center text-slate-500">

@@ -42,8 +42,7 @@ const liveConfig = () =>
     NOTIFICATIONS_MODE: "live",
     NOTIFICATIONS_EXTERNAL_APPROVED: "true",
     TELEGRAM_BOT_TOKEN: "synthetic-secret",
-    TELEGRAM_OPERATIONS_CHAT_ID: "-123",
-    TELEGRAM_OPERATIONS_VERIFIED: "true",
+    TELEGRAM_OWNER_CHAT_ID: "123",
     RESEND_API_KEY: "synthetic-key",
     RESEND_FROM_EMAIL: "sender@example.invalid",
     RESEND_SENDER_VERIFIED: "true",
@@ -208,7 +207,7 @@ describe("server-side provider and activation controls", () => {
       to: [message.recipient],
     });
   });
-  it("Telegram uses fixed private group and unparsed plain text", async () => {
+  it("Telegram uses fixed owner private chat and unparsed plain text", async () => {
     const f = vi
       .fn()
       .mockResolvedValue(
@@ -224,7 +223,7 @@ describe("server-side provider and activation controls", () => {
       )({ ...message, channel: "telegram", recipient: "attacker" }),
     ).toMatchObject({ outcome: "sent" });
     const body = JSON.parse(f.mock.calls[0][1].body);
-    expect(body.chat_id).toBe("-123");
+    expect(body.chat_id).toBe("123");
     expect(body.parse_mode).toBeUndefined();
   });
   it("ambiguous Telegram timeout is held; Resend timeout retries with same key", async () => {

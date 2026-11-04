@@ -5,11 +5,13 @@ import { ImagePlus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadMedia } from "@/app/actions/fleet";
 import { SubmitButton } from "@/components/submit-button";
+import { catalogUploadError } from "@/lib/catalog-upload";
 
 export function MediaUploadForm({ modelId }: { modelId: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [selectionError, setSelectionError] = useState("");
   const previews = useMemo(
     () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
     [files],
@@ -18,8 +20,15 @@ export function MediaUploadForm({ modelId }: { modelId: string }) {
     () => () => previews.forEach((p) => URL.revokeObjectURL(p.url)),
     [previews],
   );
-  function select(list: FileList | null) {
-    setFiles(Array.from(list ?? []).slice(0, 12));
+  function selectFiles(next: File[]) {
+    const error = next.length ? catalogUploadError(next) : null;
+    setSelectionError(error ?? "");
+    const accepted = error ? [] : next;
+    setFiles(accepted);
+    // Submit exactly the previewed files, including drops and preview removals.
+    const transfer = new DataTransfer();
+    accepted.forEach((file) => transfer.items.add(file));
+    if (inputRef.current) inputRef.current.files = transfer.files;
   }
   return (
     <ActionForm
@@ -42,7 +51,7 @@ export function MediaUploadForm({ modelId }: { modelId: string }) {
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          select(e.dataTransfer.files);
+          selectFiles(Array.from(e.dataTransfer.files));
         }}
         className={`rounded-2xl border-2 border-dashed p-6 text-center transition ${dragging ? "border-ocean bg-ocean/5" : "border-slate-200 bg-slate-50"}`}
       >
@@ -66,7 +75,7 @@ export function MediaUploadForm({ modelId }: { modelId: string }) {
           aria-label="Select motorcycle catalog photos"
           type="file"
           accept="image/avif,image/webp,image/jpeg,image/png"
-          onChange={(e) => select(e.target.files)}
+          onChange={(e) => selectFiles(Array.from(e.target.files ?? []))}
           className="sr-only"
         />
       </div>
@@ -84,9 +93,7 @@ export function MediaUploadForm({ modelId }: { modelId: string }) {
               />
               <button
                 type="button"
-                onClick={() =>
-                  setFiles((items) => items.filter((_, i) => i !== index))
-                }
+                onClick={() => selectFiles(files.filter((_, i) => i !== index))}
                 aria-label={`Remove ${file.name}`}
                 className="absolute top-1 right-1 rounded-full bg-deep-teal p-1 text-white"
               >
@@ -98,6 +105,11 @@ export function MediaUploadForm({ modelId }: { modelId: string }) {
             </div>
           ))}
         </div>
+      )}
+      {selectionError && (
+        <p role="alert" className="text-sm text-red-700">
+          {selectionError}
+        </p>
       )}
       <label className="block text-sm font-bold text-deep-teal">
         Descriptive alt text
@@ -123,7 +135,11 @@ export function MediaUploadForm({ modelId }: { modelId: string }) {
         Up to 12 AVIF, WebP, JPEG, or PNG files. Maximum 8 MB each. Upload
         progress is shown while the form is submitting.
       </p>
-      <SubmitButton pendingLabel="Uploading photos…" className="w-full">
+      <SubmitButton
+        disabled={!files.length || !!selectionError}
+        pendingLabel="Uploading photos…"
+        className="w-full"
+      >
         Upload approved photos
       </SubmitButton>
     </ActionForm>

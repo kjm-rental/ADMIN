@@ -83,64 +83,67 @@ export function BookingSettingsForm({
           </div>
         </div>
       </div>
-      <div className="mt-5 rounded-2xl border border-slate-200 p-4">
-        <h3 className="text-sm font-extrabold text-deep-teal">
-          Technical readiness evidence
-        </h3>
-        <p className="mt-1 text-xs text-slate-500">
-          Technical checks are separate from business configuration and are
-          never marked passed by saving this form.
-        </p>
-        {readinessSource && (
-          <p className="mt-2 break-words text-xs text-slate-500">
-            Source: {readinessSource.project} · Loaded{" "}
-            {new Date(readinessSource.loadedAt).toLocaleString("en-PH", {
-              timeZone: "Asia/Manila",
-            })}{" "}
-            · Asia/Manila. Each check below shows when it was verified.
+      <details className="settings-advanced">
+        <summary>Technical readiness checks</summary>
+        <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+          <h3 className="text-sm font-extrabold text-deep-teal">
+            Technical readiness evidence
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Technical checks are separate from business configuration and are
+            never marked passed by saving this form.
           </p>
-        )}
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-          {checks.map((check) => (
-            <li
-              key={check.check_key}
-              className="rounded-lg bg-slate-50 px-3 py-3 text-xs"
-            >
-              <div className="flex items-center justify-between">
-                <span>{check.check_key.replaceAll("_", " ")}</span>
-                <strong
-                  className={
-                    check.passed ? "text-emerald-700" : "text-amber-700"
-                  }
-                >
-                  {check.passed ? "Passed" : "Not verified"}
-                </strong>
-              </div>
-              <p className="mt-2 break-words leading-5 text-slate-500">
-                {check.evidence ?? "No automated evidence recorded."}
-              </p>
-              {check.checked_at && (
-                <time
-                  dateTime={check.checked_at}
-                  className="mt-1 block text-[10px] text-slate-400"
-                >
-                  Checked{" "}
-                  {new Date(check.checked_at).toLocaleString("en-PH", {
-                    timeZone: "Asia/Manila",
-                  })}{" "}
-                  · Asia/Manila
-                </time>
-              )}
-            </li>
-          ))}
-        </ul>
-        {!checks.length && (
-          <p className="mt-3 text-xs font-bold text-amber-700">
-            No readiness checks were returned. Review the configured checks
-            before enabling public booking.
-          </p>
-        )}
-      </div>
+          {readinessSource && (
+            <p className="mt-2 break-words text-xs text-slate-500">
+              Source: {readinessSource.project} · Loaded{" "}
+              {new Date(readinessSource.loadedAt).toLocaleString("en-PH", {
+                timeZone: "Asia/Manila",
+              })}{" "}
+              · Asia/Manila. Each check below shows when it was verified.
+            </p>
+          )}
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {checks.map((check) => (
+              <li
+                key={check.check_key}
+                className="rounded-lg bg-slate-50 px-3 py-3 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span>{check.check_key.replaceAll("_", " ")}</span>
+                  <strong
+                    className={
+                      check.passed ? "text-emerald-700" : "text-amber-700"
+                    }
+                  >
+                    {check.passed ? "Passed" : "Not verified"}
+                  </strong>
+                </div>
+                <p className="mt-2 break-words leading-5 text-slate-500">
+                  {check.evidence ?? "No automated evidence recorded."}
+                </p>
+                {check.checked_at && (
+                  <time
+                    dateTime={check.checked_at}
+                    className="mt-1 block text-[10px] text-slate-400"
+                  >
+                    Checked{" "}
+                    {new Date(check.checked_at).toLocaleString("en-PH", {
+                      timeZone: "Asia/Manila",
+                    })}{" "}
+                    · Asia/Manila
+                  </time>
+                )}
+              </li>
+            ))}
+          </ul>
+          {!checks.length && (
+            <p className="mt-3 text-xs font-bold text-amber-700">
+              No readiness checks were returned. Review the configured checks
+              before enabling public booking.
+            </p>
+          )}
+        </div>
+      </details>
       {errorCode && (
         <p
           role="alert"
@@ -149,52 +152,90 @@ export function BookingSettingsForm({
           {errors[errorCode] ?? "Unable to save booking settings."}
         </p>
       )}
-      <div className="mt-5 rounded-2xl border border-ocean/20 bg-ocean/5 p-5">
-        <h3 className="font-extrabold text-deep-teal">
-          Restricted synthetic booking test
-        </h3>
-        <p className="mt-1 text-xs leading-5 text-slate-500">
-          This never enables public booking. Authorization is database-enforced,
-          expires within seven days, and grants no administrator access.
-        </p>
-        <ActionForm
-          action={setBookingTesterAuthorization}
-          className="mt-4 grid gap-3 sm:grid-cols-2"
-        >
-          <input
-            required
-            aria-label="Existing authorized tester user ID"
-            name="authUserId"
-            placeholder="Existing Supabase Auth user UUID"
-            autoComplete="off"
-            className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"
-          />
-          <input
-            aria-label="Tester authorization expiry (Asia/Manila)"
-            name="expiresAt"
-            type="datetime-local"
-            className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"
-          />
-          <ConfirmButton
-            message="Update restricted tester authorization for this existing account?"
-            name="authorized"
-            value="true"
-            className="rounded-xl border border-ocean px-4 py-2.5 text-sm font-bold text-ocean"
+      <details className="settings-advanced">
+        <summary>Advanced: restricted booking testers</summary>
+        <div className="mt-5 rounded-2xl border border-ocean/20 bg-ocean/5 p-5">
+          <h3 className="font-extrabold text-deep-teal">
+            Restricted synthetic booking test
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            This never enables public booking. Authorization is
+            database-enforced, expires within seven days, and grants no
+            administrator access.
+          </p>
+          <ActionForm
+            action={setBookingTesterAuthorization}
+            className="mt-4 grid gap-3 sm:grid-cols-2"
           >
-            Authorize tester
-          </ConfirmButton>
-          <ConfirmButton
-            message="Update restricted tester authorization for this existing account?"
-            name="authorized"
-            value="false"
-            formNoValidate
-            className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-700"
-          >
-            Revoke immediately
-          </ConfirmButton>
-        </ActionForm>
-      </div>
+            <input
+              required
+              aria-label="Existing authorized tester user ID"
+              name="authUserId"
+              placeholder="Existing Supabase Auth user UUID"
+              autoComplete="off"
+              className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"
+            />
+            <input
+              aria-label="Tester authorization expiry (Asia/Manila)"
+              name="expiresAt"
+              type="datetime-local"
+              className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm"
+            />
+            <ConfirmButton
+              message="Update restricted tester authorization for this existing account?"
+              name="authorized"
+              value="true"
+              className="rounded-xl border border-ocean px-4 py-2.5 text-sm font-bold text-ocean"
+            >
+              Authorize tester
+            </ConfirmButton>
+            <ConfirmButton
+              message="Update restricted tester authorization for this existing account?"
+              name="authorized"
+              value="false"
+              formNoValidate
+              className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-700"
+            >
+              Revoke immediately
+            </ConfirmButton>
+          </ActionForm>
+        </div>
+      </details>
       <ActionForm action={saveBookingSettings} className="mt-7 space-y-8">
+        <fieldset className="admin-settings-fields">
+          <legend className="font-extrabold text-deep-teal">
+            Hourly extension policy
+          </legend>
+          <label className="mt-3 block text-sm font-bold">
+            Maximum hourly extension after complete 24-hour periods
+            <input
+              name="maxHourlyExtensionHours"
+              type="number"
+              min="0"
+              max="23"
+              step="1"
+              defaultValue={settings?.max_hourly_extension_hours ?? ""}
+              disabled={settings?.max_hourly_extension_hours === undefined}
+              placeholder="Not selected — preserve current billing"
+              className="mt-2 min-h-11 w-full rounded-xl border px-3"
+            />
+          </label>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Leave blank to preserve current billing. Save 0 to bill every
+            additional period as a complete rental day, or 1–23 to permit hourly
+            extensions up to that many hours. Beyond this limit, the extension
+            is not permitted; choose a complete rental period instead (requires
+            migration 034). Partial hours round up to the next hour; hourly
+            charges never exceed that next period. Minimum rental: 24 hours.
+            Requires “started 24 hours” day calculation. Changes apply to new
+            quotes, not saved bookings.
+          </p>
+          {settings?.max_hourly_extension_hours === undefined && (
+            <p className="mt-2 text-xs text-amber-800">
+              Apply reviewed migration 032 before configuring this policy.
+            </p>
+          )}
+        </fieldset>
         <fieldset className="admin-settings-fields">
           <legend className="font-extrabold text-deep-teal">
             Weekly pickup and return hours
