@@ -255,43 +255,23 @@ describe("existing server action contracts — mocked boundary, no database writ
       p_unit_id: null,
     });
   });
-  it("preserves expectedTotal concurrency protection for quantity saves", async () => {
-    await expect(
-      saveInventoryQuantity(
-        { error: "", saved: false },
-        form({ modelId: id, total: "5", expectedTotal: "2" }),
-      ),
-    ).resolves.toEqual({ error: "", saved: true });
-    expect(mocks.rpc).toHaveBeenCalledWith("admin_set_motorcycle_quantity", {
-      p_model_id: id,
-      p_total: 5,
-      p_expected_total: 2,
-    });
-  });
-  it.each(["-1", "1.5", "1001"])(
-    "rejects quantity %s before database access",
+  it.each(["5", "-1", "1.5", "1001"])(
+    "blocks legacy quantity changes (%s) without an inventory RPC",
     async (total) => {
-      expect(
-        (
-          await saveInventoryQuantity(
-            { error: "", saved: false },
-            form({ modelId: id, total, expectedTotal: "2" }),
-          )
-        ).saved,
-      ).toBe(false);
-      expect(mocks.requireAdmin).not.toHaveBeenCalled();
+      await expect(
+        saveInventoryQuantity(
+          { error: "", saved: false },
+          form({ modelId: id, total, expectedTotal: "2" }),
+        ),
+      ).resolves.toEqual({
+        error:
+          "Add or edit individual motorcycle units in the inventory section. Quantity changes are disabled.",
+        saved: false,
+      });
+      expect(mocks.requireAdmin).toHaveBeenCalled();
       expect(mocks.rpc).not.toHaveBeenCalled();
     },
   );
-  it("returns quantity errors without a false success", async () => {
-    mocks.rpc.mockResolvedValue({ error: { message: "Inventory changed" } });
-    await expect(
-      saveInventoryQuantity(
-        { error: "", saved: false },
-        form({ modelId: id, total: "5", expectedTotal: "2" }),
-      ),
-    ).resolves.toEqual({ error: "Inventory changed", saved: false });
-  });
   it("requires authorization expiry and maps revocation submitter value", async () => {
     await expect(
       setBookingTesterAuthorization(
@@ -532,7 +512,9 @@ describe("fleet and extras form contracts — in-memory database only", () => {
       "files",
       new File(["synthetic"], "synthetic.txt", { type: "text/plain" }),
     );
-    await expect(uploadMedia(f)).rejects.toThrow("no larger than 8 MB");
+    await expect(uploadMedia(f)).rejects.toThrow(
+      "use an AVIF, WebP, JPEG, or PNG image",
+    );
     expect(mocks.from).not.toHaveBeenCalled();
   });
   it("maps extra pricing mode and inventory limits to catalog fields", async () => {

@@ -10,7 +10,7 @@ export async function recordOfflinePayment(formData: FormData) {
     .object({
       bookingId: z.uuid(),
       amountPhp: z.coerce.number().positive().multipleOf(0.01),
-      method: z.enum(["cash", "bank_transfer", "other_offline"]),
+      method: z.literal("cash"),
       transactionReference: z.string().trim().max(200).optional(),
       paidAt: z.string().min(1),
       notes: z.string().trim().max(2000).optional(),
