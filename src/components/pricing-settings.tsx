@@ -63,13 +63,16 @@ export function PricingSettings({
       <div className="settings-payment-status">
         <CreditCard size={22} />
         <div>
-          <strong>Customer payments: Cash on Pickup</strong>
+          <strong>Customer payment methods</strong>
           <p>
-            Gateway cost profiles do not enable PayMongo or Maya, change
-            customer prices, or add a processing fee to a booking.
+            Manage cash and verified QRPh in Payment Methods. Gateway cost
+            profiles below estimate provider costs; they do not activate a
+            payment method or add a customer charge.
           </p>
         </div>
-        <span>Online payments off</span>
+        <Link href="/dashboard/settings?section=methods">
+          View payment methods
+        </Link>
       </div>
       <section className="settings-card">
         <header>

@@ -11,6 +11,8 @@ export default async function DashboardLayout({
   await connection();
   const { user } = await requireAdmin();
   return (
-    <AdminShell email={user.email ?? "Administrator"}>{children}</AdminShell>
+    <AdminShell email={user.email ?? "Administrator"} ownerId={user.id}>
+      {children}
+    </AdminShell>
   );
 }

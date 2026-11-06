@@ -1,0 +1,9 @@
+# Owner onboarding and reference guide
+
+The signed-in dashboard shows a first-visit welcome on this administrator/browser, a 22-stop view-only walkthrough, and a permanent Help button. Help & guide in the sidebar opens a searchable reference with category filters, task instructions, booking/verification/payment glossaries, troubleshooting and a daily checklist. Tour steps link to their detailed guide topics.
+
+The tour opens existing read-only page views. It never submits forms, changes settings, records money, approves documents, sends messages or creates example bookings. Native modal semantics, Escape, keyboard focus, Back/Next, pause/resume and restart are supported. Progress is versioned and scoped to the authenticated user ID in localStorage; no business database migration or account metadata update is required. On a new browser/device, or after clearing browser storage, the first-visit welcome can appear again. If storage is unavailable, the guide remains usable.
+
+Tutorial code loads separately from the Admin shell; the full handbook content is loaded on the Help page. Content was checked against the current app controls: reports are all-time, acceptance/payment/verification are distinct, deposits are separate from rental income, original accepted terms are preserved in PDF exports, and sent notifications indicate provider acceptance rather than guaranteed inbox placement. The stale unconditional 'Online payments off' pricing label was replaced with a link to the actual Payment Methods controls.
+
+Validation: 518 tests pass, TypeScript and production build pass, ESLint passes. Tests cover corrupt/versioned progress, per-user keys, topic/step integrity, every main navigation section, core lifecycle coverage and valid page links. All changes are Admin UI/content; no SQL, credentials, payment events or notification-delivery settings changed.

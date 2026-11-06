@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -22,8 +23,18 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
+  CircleHelp,
 } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
+
+const OwnerOnboarding = dynamic(() => import("@/components/owner-onboarding"), {
+  ssr: false,
+  loading: () => (
+    <Link className="owner-help-trigger" href="/dashboard/help">
+      Help
+    </Link>
+  ),
+});
 
 export const adminNavigation = [
   {
@@ -99,13 +110,21 @@ export const adminNavigation = [
     icon: Settings,
     group: "Workspace",
   },
+  {
+    href: "/dashboard/help",
+    label: "Help & guide",
+    icon: CircleHelp,
+    group: "Workspace",
+  },
 ] as const;
 
 export function AdminShell({
   email,
+  ownerId = "local",
   children,
 }: {
   email: string;
+  ownerId?: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -276,6 +295,7 @@ export function AdminShell({
             </div>
           </div>
           <div className="admin-topbar-access">
+            <OwnerOnboarding ownerId={ownerId} />
             <ShieldCheck size={16} aria-hidden="true" />
             <span>Administrator</span>
             <span className="admin-avatar" aria-hidden="true">
