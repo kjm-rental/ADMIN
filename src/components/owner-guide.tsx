@@ -79,9 +79,10 @@ export function OwnerGuide() {
           <button
             type="button"
             className="owner-guide-primary"
-            onClick={() =>
-              window.dispatchEvent(new Event("kjm:open-owner-tour"))
-            }
+            onClick={() => {
+              document.documentElement.dataset.ownerGuideRequested = "true";
+              window.dispatchEvent(new Event("kjm:open-owner-tour"));
+            }}
           >
             <Play size={16} />
             Start or resume the walkthrough

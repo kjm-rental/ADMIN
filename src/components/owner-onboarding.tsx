@@ -22,6 +22,7 @@ import {
 export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
   const router = useRouter(),
     pathname = usePathname(),
+    initialPath = useRef(pathname),
     dialog = useRef<HTMLDialogElement>(null),
     trigger = useRef<HTMLButtonElement>(null),
     heading = useRef<HTMLHeadingElement>(null);
@@ -31,13 +32,6 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
     [index, setIndex] = useState(0),
     [completed, setCompleted] = useState(false);
   const key = ownerTourStorageKey(ownerId);
-  function read() {
-    try {
-      return parseOwnerTourProgress(localStorage.getItem(key));
-    } catch {
-      return parseOwnerTourProgress(null);
-    }
-  }
   function save(progress: OwnerTourProgress) {
     try {
       localStorage.setItem(
@@ -58,9 +52,11 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
       }
       setIndex(p.step);
       setCompleted(p.completed);
+      const requested =
+        document.documentElement.dataset.ownerGuideRequested === "true";
+      delete document.documentElement.dataset.ownerGuideRequested;
       if (
-        !p.seen &&
-        pathname !== "/dashboard/help" &&
+        (requested || (!p.seen && initialPath.current !== "/dashboard/help")) &&
         !document.querySelector("dialog[open]")
       ) {
         try {
@@ -78,6 +74,7 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
       }
     }, 0);
     const launch = () => {
+      delete document.documentElement.dataset.ownerGuideRequested;
       setView("welcome");
     };
     window.addEventListener("kjm:open-owner-tour", launch);
@@ -85,7 +82,7 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
       clearTimeout(timer);
       window.removeEventListener("kjm:open-owner-tour", launch);
     };
-  }, [key, pathname]);
+  }, [key]);
   useEffect(() => {
     if (view && !dialog.current?.open) dialog.current?.showModal();
     else if (!view && dialog.current?.open) dialog.current.close();
@@ -125,10 +122,7 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
         aria-expanded={Boolean(view)}
         aria-controls="owner-dashboard-tour"
         onClick={() => {
-          const p = read();
-          setIndex(p.step);
-          setCompleted(p.completed);
-          save({ ...p, seen: true });
+          save({ seen: true, step: index, completed });
           setView("welcome");
         }}
       >
