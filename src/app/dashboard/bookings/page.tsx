@@ -14,6 +14,11 @@ export default async function BookingsPage({
   await connection();
   const f = await searchParams,
     { supabase } = await requireAdmin();
+  const status = f.status ?? "not_expired";
+  let bookingQuery = supabase.from("bookings").select("*");
+  if (status === "not_expired")
+    bookingQuery = bookingQuery.neq("status", "expired");
+  else if (status !== "all") bookingQuery = bookingQuery.eq("status", status);
   const [
     { data: bookings, error },
     { data: customers },
@@ -22,10 +27,7 @@ export default async function BookingsPage({
     { data: payments, error: paymentError },
     { data: extras, error: extrasError },
   ] = await Promise.all([
-    supabase
-      .from("bookings")
-      .select("*")
-      .order("created_at", { ascending: false }),
+    bookingQuery.order("created_at", { ascending: false }),
     supabase.from("customers").select("id,full_name,email"),
     supabase.from("motorcycle_models").select("id,display_name"),
     supabase.from("customer_verifications").select("booking_id,overall_status"),
@@ -46,7 +48,6 @@ export default async function BookingsPage({
     (adminOrigins ?? []).map((item) => [item.booking_id, item.source]),
   );
   const q = (f.q ?? "").toLowerCase(),
-    status = f.status ?? "all",
     verification = f.verification ?? "all";
   const rows = (bookings ?? []).filter((b) => {
     const c = customers?.find((x) => x.id === b.customer_id),
@@ -60,7 +61,6 @@ export default async function BookingsPage({
           c?.full_name,
           m?.display_name,
         )) &&
-      (status === "all" || b.status === status) &&
       (verification === "all" || v?.overall_status === verification)
     );
   });
@@ -95,7 +95,8 @@ export default async function BookingsPage({
           defaultValue={status}
           className="rounded-xl border border-slate-200 px-3 text-sm"
         >
-          <option value="all">All booking statuses</option>
+          <option value="not_expired">Hide expired</option>
+          <option value="all">All statuses (including expired)</option>
           {[
             "submitted",
             "pending",
