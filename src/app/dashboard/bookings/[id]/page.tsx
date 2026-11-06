@@ -144,6 +144,8 @@ export default async function BookingPage({
     { data: documentUploads },
     { data: otherHolds },
     { data: maintenance },
+    serviceRecords,
+    onlinePayment,
   ] = await Promise.all([
     getSecurityDepositView(id),
     supabase
@@ -186,6 +188,8 @@ export default async function BookingPage({
       .select("motorcycle_unit_id")
       .lt("start_at", b.end_at)
       .gt("end_at", b.start_at),
+    getBookingServices([id]),
+    getLivePaymentContext(id),
   ]).then((results) => {
     checkedQueries([
       results[1],
@@ -214,8 +218,7 @@ export default async function BookingPage({
         .from("motorcycle-catalog")
         .getPublicUrl(media[0].storage_path).data.publicUrl
     : null;
-  const service = (await getBookingServices([id]))[0];
-  const onlinePayment = await getLivePaymentContext(id);
+  const service = serviceRecords[0];
   const requirement = depositData.requirements[0];
   const deposit = requirement
     ? depositBalance(requirement, depositData.events)

@@ -35,10 +35,13 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  // Verify signatures locally when asymmetric keys are available. Server pages
+  // and mutations still fetch the current user and active administrator membership.
+  const { data, error } = await supabase.auth.getClaims();
+  if (
+    (error || !data?.claims?.sub) &&
+    request.nextUrl.pathname.startsWith("/dashboard")
+  ) {
     const signInUrl = request.nextUrl.clone();
     signInUrl.pathname = "/sign-in";
     signInUrl.search = "";

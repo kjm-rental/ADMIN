@@ -46,14 +46,18 @@ export default async function SettingsPage({
   const { section, error, changed, policy, ready, bookingError, tester } =
     await searchParams;
   const { supabase } = await requireAdmin();
-  const [deposits, gatewayFees] = await Promise.all([
-    getSecurityDepositSettings(),
-    getGatewayFees(),
-  ]);
-  const [{ data: booking }, { data: readiness }] = await Promise.all([
-    supabase.from("booking_settings").select("*").maybeSingle(),
-    supabase.from("booking_readiness_checks").select("*").order("check_key"),
-  ]).then(checkedQueries);
+  const [deposits, gatewayFees, [{ data: booking }, { data: readiness }]] =
+    await Promise.all([
+      getSecurityDepositSettings(),
+      getGatewayFees(),
+      Promise.all([
+        supabase.from("booking_settings").select("*").maybeSingle(),
+        supabase
+          .from("booking_readiness_checks")
+          .select("*")
+          .order("check_key"),
+      ]).then(checkedQueries),
+    ]);
   const hours = readOperatingHours(booking?.operating_hours);
   const openDays = hours
     ? weekdays.filter((day) => hours[day].enabled).length

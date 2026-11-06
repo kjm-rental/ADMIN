@@ -25,6 +25,7 @@ beforeEach(() => {
     const q = {
       select: () => q,
       eq: () => q,
+      neq: () => q,
       in: () => q,
       is: () => q,
       lt: () => q,
