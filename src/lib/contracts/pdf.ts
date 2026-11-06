@@ -4,7 +4,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { RentalContractData } from "@/services/rental-contract";
 import { rentalDuration } from "@/lib/rental-duration";
-import { rentalPricingRows } from "@/lib/rental-pricing";
+import { rentalPricingRows, parseRentalPricing } from "@/lib/rental-pricing";
 
 const assets = Promise.all([
   readFile(path.join(process.cwd(), "assets/contracts/NotoSans-Regular.ttf")),
@@ -459,7 +459,11 @@ export async function renderRentalContract(
     17,
   );
   heading("Rental pricing");
-  const pricing = rentalPricingRows(b.rental_pricing);
+  const allPricing = rentalPricingRows(b.rental_pricing);
+  const pricing =
+    parseRentalPricing(b.rental_pricing)?.additionalHours === 0
+      ? allPricing.slice(0, 1)
+      : allPricing;
   if (pricing.length)
     for (const [label, value] of pricing)
       flow(`${label}: ${value}`, 9.2, regular, ink, 5);
@@ -504,7 +508,6 @@ export async function renderRentalContract(
       flow(label!, 8, bold, teal, 3);
       flow(value, 9.2, regular, ink, 9);
     }
-  heading("Pickup and return arrangements");
   const serviceColumns = (["delivery", "collection"] as const).map((leg) => {
     const raw = data.services?.[leg];
     const rows: string[] = [];
@@ -537,24 +540,39 @@ export async function renderRentalContract(
         ),
       ),
     );
-  ensure(serviceHeight + 10);
-  serviceColumns.forEach((column, i) => {
-    const x = L + i * (half + 14);
-    page.drawRectangle({
-      x,
-      y: y - serviceHeight,
-      width: half,
-      height: serviceHeight,
-      color: mint,
+  const selfPickupAndReturn =
+    !data.services?.delivery && !data.services?.collection;
+  ensure((selfPickupAndReturn ? 22 : serviceHeight + 10) + 36);
+  heading("Pickup and return arrangements");
+  if (selfPickupAndReturn)
+    flow("Pickup and return at KJM.", 9.2, regular, ink, 8);
+  else {
+    serviceColumns.forEach((column, i) => {
+      const x = L + i * (half + 14);
+      page.drawRectangle({
+        x,
+        y: y - serviceHeight,
+        width: half,
+        height: serviceHeight,
+        color: mint,
+      });
+      at(column.title, x + 12, y - 11, 9.5, bold, teal);
+      let cursor = y - 32;
+      for (const value of column.rows)
+        cursor -=
+          paragraphAt(
+            value,
+            x + 12,
+            cursor,
+            half - 24,
+            8.6,
+            regular,
+            ink,
+            12.5,
+          ) + 4;
     });
-    at(column.title, x + 12, y - 11, 9.5, bold, teal);
-    let cursor = y - 32;
-    for (const value of column.rows)
-      cursor -=
-        paragraphAt(value, x + 12, cursor, half - 24, 8.6, regular, ink, 12.5) +
-        4;
-  });
-  y -= serviceHeight + 10;
+    y -= serviceHeight + 10;
+  }
   heading("Agreement record");
   flow(
     `Terms version: ${terms.version} | Effective date: ${terms.effectiveDate}`,

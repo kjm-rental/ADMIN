@@ -50,6 +50,49 @@ it("generates a paginated PDF with embedded fonts and all archived terms", async
       path.join(process.env.KJM_CONTRACT_PREVIEW_DIR, "sample-contract.pdf"),
       bytes,
     );
+    const cash = sampleRentalContract();
+    cash.services = null;
+    cash.extras.push({
+      name_snapshot: "Raincoat",
+      quantity: 2,
+      line_total_centavos: 0,
+    });
+    cash.booking.end_at = "2026-11-21T02:17:00+08:00";
+    cash.booking.total_centavos = 71900;
+    cash.booking.quoted_total_php = 719;
+    cash.payments = [{ event_type: "payment", amount_centavos: 71900 }];
+    cash.booking.rental_pricing = {
+      version: 1,
+      mode: "hourly",
+      baseDays: 1,
+      baseChargePhp: 619,
+      additionalHours: 0,
+      hourlyRatePhp: 35,
+      extensionChargePhp: 0,
+      totalPhp: 619,
+    };
+    cash.deposit = {
+      ...cash.deposit!,
+      option: "cash",
+      document_type: null,
+      required_centavos: 250000,
+      collection_instructions:
+        "Customers must bring the agreed deposit to pickup. Cash is collected before release and recorded separately from rental payment. ".repeat(
+          5,
+        ),
+      return_instructions:
+        "The refundable balance is returned after inspection and assessment of outstanding charges. Deposit returns are recorded in the system. ".repeat(
+          3,
+        ),
+      dispute_instructions:
+        "Contact KJM with any deposit questions. Any deduction must be documented and explained to the renter, with supporting records available. ".repeat(
+          4,
+        ),
+    };
+    await writeFile(
+      path.join(process.env.KJM_CONTRACT_PREVIEW_DIR, "sample-cash-self.pdf"),
+      await renderRentalContract(cash),
+    );
     const draft = sampleRentalContract();
     draft.acceptance = null;
     draft.customer.full_name = "Sample renter " + "VeryLongName".repeat(35);
