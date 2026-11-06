@@ -141,6 +141,14 @@ export async function processNotifications(
 ) {
   if (config.mode === "disabled")
     return { mode: "disabled", processed: 0, sent: 0, failed: 0 };
+  if (
+    channels.includes("telegram") &&
+    config.mode === "live" &&
+    (!validOwnerChatId(config.telegramChatId) ||
+      !config.telegramToken ||
+      !approvedUrl(config.adminBase, "/dashboard/bookings", config.development))
+  )
+    throw Error("Owner notification configuration unavailable");
   const database = db ?? createNotificationServiceClient(),
     adapter = transport ?? createTransport(config);
   const scheduled = await database.rpc("notification_schedule_reminders", {});
@@ -149,19 +157,6 @@ export async function processNotifications(
   // One leased row at a time; serial providers avoid bursts and keep leases within 90s.
   // Invocation is bounded to two deliveries; external scheduler chooses the approved cadence.
   for (const channel of channels) {
-    // Do not consume an owner queue lease when required configuration is absent.
-    if (
-      channel === "telegram" &&
-      config.mode === "live" &&
-      (!validOwnerChatId(config.telegramChatId) ||
-        !config.telegramToken ||
-        !approvedUrl(
-          config.adminBase,
-          "/dashboard/bookings",
-          config.development,
-        ))
-    )
-      continue;
     const claimed = await database.rpc("notification_claim", {
       p_channel: channel,
       p_mock: config.mode === "mock",

@@ -137,16 +137,21 @@ it("fixes delivery to the configured owner and includes the approved inline Admi
   });
   expect(payload.protect_content).toBe(true);
 });
-it("skips Telegram claims when the owner is missing, preserving the queue", async () => {
-  const rpc = vi.fn(async () => ({ data: [], error: null }));
-  await processNotifications({ ...config, telegramChatId: "" }, {
-    rpc,
-  } as unknown as SupabaseClient<Database>);
-  expect(rpc).not.toHaveBeenCalledWith(
-    "notification_claim",
-    expect.objectContaining({ p_channel: "telegram" }),
-  );
-});
+it.each([
+  { telegramChatId: "" },
+  { adminBase: "http://localhost:3001", development: false },
+])(
+  "reports invalid owner configuration instead of a false successful run: %j",
+  async (invalid) => {
+    const rpc = vi.fn(async () => ({ data: [], error: null }));
+    await expect(
+      processNotifications({ ...config, ...invalid }, {
+        rpc,
+      } as unknown as SupabaseClient<Database>),
+    ).rejects.toThrow("Owner notification configuration unavailable");
+    expect(rpc).not.toHaveBeenCalled();
+  },
+);
 
 it("can process only Telegram without competing for MAIN email leases", async () => {
   const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
