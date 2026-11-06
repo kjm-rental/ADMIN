@@ -667,6 +667,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: Json;
       };
+      admin_set_id_deposit_enabled: {
+        Args: { p_enabled: boolean };
+        Returns: undefined;
+      };
       admin_save_security_deposit_settings: {
         Args: { p_settings: Json };
         Returns: undefined;

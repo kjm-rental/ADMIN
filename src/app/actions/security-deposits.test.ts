@@ -8,6 +8,7 @@ vi.mock("@/lib/auth", () => ({ getFreshAdminSession: mock.session }));
 vi.mock("next/cache", () => ({ revalidatePath: mock.refresh }));
 import {
   saveSecurityDepositSettings,
+  setIdDepositEnabled,
   recordSecurityDepositEvent,
   recordRentalInspection,
 } from "./security-deposits";
@@ -53,6 +54,7 @@ beforeEach(() => {
 describe("active-admin rental operations contracts", () => {
   it.each([
     [saveSecurityDepositSettings, () => new FormData()],
+    [setIdDepositEnabled, () => form({ enabled: "true" })],
     [recordSecurityDepositEvent, event],
     [recordRentalInspection, inspection],
   ] as const)("requires fresh authorization", async (action, make) => {
@@ -60,7 +62,7 @@ describe("active-admin rental operations contracts", () => {
     await expect(action(make())).rejects.toThrow("Active administrator");
     expect(mock.rpc).not.toHaveBeenCalled();
   });
-  it("never assumes management or legal approval", async () => {
+  it("cash settings do not alter the independent ID deposit switch", async () => {
     await saveSecurityDepositSettings(
       form({
         cashAmountPhp: "123.45",
@@ -73,12 +75,27 @@ describe("active-admin rental operations contracts", () => {
         p_settings: expect.objectContaining({
           cash_amount_centavos: 12345,
           cash_policy_approved: false,
-          id_legal_approved: false,
-          id_enabled: false,
-          accepted_document_types: ["Synthetic card"],
         }),
       },
     );
+    const settings = mock.rpc.mock.calls[0][1].p_settings;
+    expect(settings).not.toHaveProperty("id_enabled");
+    expect(settings).not.toHaveProperty("id_legal_approved");
+  });
+  it.each(["true", "false"])(
+    "sets ID deposit to %s with no review fields",
+    async (enabled) => {
+      await setIdDepositEnabled(form({ enabled }));
+      expect(mock.rpc).toHaveBeenCalledWith("admin_set_id_deposit_enabled", {
+        p_enabled: enabled === "true",
+      });
+    },
+  );
+  it("rejects malformed ID deposit toggles", async () => {
+    await expect(
+      setIdDepositEnabled(form({ enabled: "yes" })),
+    ).rejects.toThrow();
+    expect(mock.rpc).not.toHaveBeenCalled();
   });
   it.each(["1.234", "-1", "1e3", "21474836.48"])(
     "rejects invalid PHP %s",

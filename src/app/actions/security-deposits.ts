@@ -32,29 +32,27 @@ export async function saveSecurityDepositSettings(data: FormData) {
       .trim()
       .max(4000)
       .parse(data.get(key) ?? "");
-  const types = [
-    ...new Set(
-      text("acceptedDocumentTypes")
-        .split(/\r?\n/)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    ),
-  ];
   const amount = data.get("cashAmountPhp");
   const { error } = await supabase.rpc("admin_save_security_deposit_settings", {
     p_settings: {
       cash_enabled: data.get("cashEnabled") === "on",
       cash_amount_centavos: amount ? centavos(amount) : null,
       cash_policy_approved: data.get("cashPolicyApproved") === "on",
-      id_enabled: data.get("idEnabled") === "on",
-      id_legal_approved: data.get("idLegalApproved") === "on",
-      id_legal_reference: text("legalReference"),
-      accepted_document_types: types,
       collection_instructions: text("collectionInstructions"),
       return_instructions: text("returnInstructions"),
       dispute_instructions: text("disputeInstructions"),
       partial_cash_return_allowed: data.get("partialReturns") === "on",
     },
+  });
+  if (error) throw Error(error.message);
+  revalidatePath("/dashboard/settings");
+  refresh();
+}
+export async function setIdDepositEnabled(data: FormData) {
+  const enabled = z.enum(["true", "false"]).parse(data.get("enabled"));
+  const { supabase } = await activeAdmin();
+  const { error } = await supabase.rpc("admin_set_id_deposit_enabled", {
+    p_enabled: enabled === "true",
   });
   if (error) throw Error(error.message);
   revalidatePath("/dashboard/settings");
