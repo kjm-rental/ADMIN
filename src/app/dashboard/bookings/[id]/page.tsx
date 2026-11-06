@@ -1,3 +1,4 @@
+import { DownloadRentalContract } from "@/components/download-rental-contract";
 import { normalizeMotorcycleColor } from "@/lib/motorcycle-color";
 import { ManualBookingManagement } from "@/components/manual-booking-management";
 import { getLivePaymentContext } from "@/services/live-payment-status";
@@ -389,6 +390,10 @@ export default async function BookingPage({
               {formatDate(b.end_at)}
             </p>
           </div>
+          <DownloadRentalContract
+            bookingId={id}
+            reference={b.booking_reference}
+          />
           <ManageBookingButton />
         </div>
       </header>

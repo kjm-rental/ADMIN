@@ -20,6 +20,43 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booking_terms_acceptances: {
+        Row: {
+          booking_id: string;
+          auth_user_id: string | null;
+          terms_version: string;
+          source_sha256: string;
+          accepted_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      rental_terms_versions: {
+        Row: {
+          version: string;
+          source_sha256: string;
+          effective_date: string;
+          archive_path: string;
+          is_current: boolean;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      booking_services: {
+        Row: {
+          booking_id: string;
+          delivery: Json | null;
+          collection: Json | null;
+          delivery_fee_centavos: number;
+          collection_fee_centavos: number;
+          payment_method: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       booking_time_blocks: {
         Row: {
           id: string;

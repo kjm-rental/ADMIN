@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ["tesseract.js"],
   outputFileTracingIncludes: {
+    "/api/bookings/**/contract": [
+      "./assets/contracts/**/*",
+      "./public/images/brand/kjm-logo.png",
+    ],
     "/api/verification/**": [
       "./src/lib/document-ocr-worker.cjs",
       "./node_modules/tesseract.js/**/*",
