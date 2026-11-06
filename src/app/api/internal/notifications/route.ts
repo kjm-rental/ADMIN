@@ -1,6 +1,7 @@
 import { authorizedScheduler } from "@/lib/notifications/scheduler-auth";
 import { readNotificationConfig } from "@/lib/notifications/config";
 import { processNotifications } from "@/lib/notifications/worker";
+export const maxDuration = 60;
 export async function POST(request: Request) {
   if (
     !authorizedScheduler(
