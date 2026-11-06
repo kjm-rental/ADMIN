@@ -9,3 +9,9 @@ The GET export verifies a fresh active administrator session, reads through the 
 The owner-supplied 2026-10-12 agreement archive is identical to MAIN's published source. Noto Sans fonts are bundled under the SIL Open Font License; their license is in assets/contracts/OFL.txt. Font/logo assets are included in the route's output tracing.
 
 Validation: 507 tests pass, ESLint and production build pass, zero production dependency vulnerabilities. Tests cover fresh-admin authorization, identifier validation, private download headers/safe filenames, absent bookings, server-error redaction, acceptance/version/hash handling, draft handling, and long unbroken text wrapping. Synthetic accepted and draft PDFs were rendered and visually inspected across all 10 pages; text checks verified every source section/clause/list item, accent and peso glyphs, and printable bounds. Generated validation files contain synthetic customer data only and are outside the repository.
+
+## Presentation redesign
+
+The export now uses a branded header, side-by-side renter/motorcycle cards, a pickup/return/duration band, an aligned payment table with a prominent balance, a separate deposit card, and an explicit acceptance panel. Saved instructions and service arrangements are grouped on the detail page. Full terms use two columns with shaded section headings and repeated page references. Document provenance is separated from the agreement wording at the end.
+
+Standard synthetic export: 8 pages (previously 10); long-name/long-email draft stress case: 9 pages. All 28 sections, every clause/list item, Unicode accents/peso symbols, page bounds and draft/acceptance labels were checked after rendering. Auth, version/hash verification, stored amounts and agreement text are unchanged.
