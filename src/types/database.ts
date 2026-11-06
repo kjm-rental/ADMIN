@@ -20,6 +20,22 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booking_time_blocks: {
+        Row: {
+          id: string;
+          start_at: string;
+          end_at: string;
+          scope: "pickup" | "return" | "both";
+          reason: string;
+          created_by: string;
+          created_at: string;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       booking_admin_details: {
         Row: {
           booking_id: string;
@@ -597,6 +613,23 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      admin_add_booking_time_block: {
+        Args: {
+          p_start_at: string;
+          p_end_at: string;
+          p_scope: string;
+          p_reason: string;
+        };
+        Returns: string;
+      };
+      admin_cancel_booking_time_block: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      admin_enable_24_hour_booking: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
       admin_manage_motorcycle_unit: {
         Args: {
           p_model_id: string;

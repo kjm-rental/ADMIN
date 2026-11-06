@@ -241,8 +241,9 @@ export function BookingSettingsForm({
             Weekly pickup and return hours
           </legend>
           <p className="mt-1 text-xs text-slate-500">
-            Asia/Manila timezone. Use 00:00 as midnight at the end of the
-            business day; closed days do not require times.
+            Asia/Manila timezone. Set opening and closing to 00:00 for 24-hour
+            availability. A closing time of 00:00 means midnight at the end of
+            the day. Closed days do not require times.
           </p>
           <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200">
             <table className="w-full min-w-[700px] text-sm">

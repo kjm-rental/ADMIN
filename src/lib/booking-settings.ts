@@ -11,7 +11,7 @@ export const weekdays = [
 ] as const;
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 function closesAfterOpening(open: string, close: string) {
-  return close === "00:00" ? open !== "00:00" : open < close;
+  return close === "00:00" || open < close;
 }
 const daySchedule = z.discriminatedUnion("enabled", [
   z.object({ enabled: z.literal(false) }),

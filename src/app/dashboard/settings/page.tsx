@@ -1,3 +1,4 @@
+import { BookingTimeBlocks } from "@/components/booking-time-blocks";
 import { DeliverySettings } from "@/components/delivery-settings";
 import { TelegramSettings } from "@/components/telegram-settings";
 import Link from "next/link";
@@ -177,6 +178,7 @@ export default async function SettingsPage({
           booking: (
             <>
               {" "}
+              <BookingTimeBlocks operatingHours={booking?.operating_hours} />
               <BookingSettingsForm
                 settings={booking}
                 checks={readiness ?? []}

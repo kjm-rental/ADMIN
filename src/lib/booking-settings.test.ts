@@ -50,3 +50,20 @@ describe("booking settings", () => {
     expect(() => parseOperatingHours(form)).toThrow();
   });
 });
+
+it("accepts 00:00 to 00:00 as 24-hour availability", () => {
+  const form = new FormData();
+  form.set("mondayEnabled", "on");
+  for (const field of [
+    "PickupOpen",
+    "PickupClose",
+    "ReturnOpen",
+    "ReturnClose",
+  ])
+    form.set(`monday${field}`, "00:00");
+  expect(parseOperatingHours(form).monday).toMatchObject({
+    enabled: true,
+    pickupOpen: "00:00",
+    pickupClose: "00:00",
+  });
+});

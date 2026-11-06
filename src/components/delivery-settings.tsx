@@ -88,7 +88,8 @@ export async function DeliverySettings({
             </label>
             <p className="text-sm text-slate-500">
               Turning off preserves areas, quoted fees and existing bookings.
-              Independent service hours apply every day in Asia/Manila.
+              Service hours apply every day in Asia/Manila. Set both opening and
+              closing to 00:00 for 24/7 service. Booking time blocks also apply.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {(
