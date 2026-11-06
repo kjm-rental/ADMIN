@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -13,37 +13,39 @@ import { guideGroups, ownerGuideTopics } from "@/lib/owner-guide/topics";
 export function OwnerGuide() {
   const [query, setQuery] = useState(""),
     [group, setGroup] = useState("all");
+  const openTopic = useCallback((id: string) => {
+    if (!ownerGuideTopics.some((topic) => topic.id === id)) return;
+    setQuery("");
+    setGroup("all");
+    requestAnimationFrame(() => {
+      const topic = document.getElementById(id);
+      if (topic instanceof HTMLDetailsElement) {
+        topic.open = true;
+        topic.scrollIntoView({ block: "start" });
+      }
+    });
+  }, []);
   useEffect(() => {
     const reveal = () => {
-      let id = "";
       try {
-        id = decodeURIComponent(window.location.hash.slice(1));
+        openTopic(decodeURIComponent(window.location.hash.slice(1)));
       } catch {
-        return;
+        /* Ignore malformed fragments. */
       }
-      const target = id ? document.getElementById(id) : null;
-      if (target instanceof HTMLDetailsElement) {
-        target.open = true;
-        target.scrollIntoView({ block: "start" });
-      } else if (ownerGuideTopics.some((topic) => topic.id === id)) {
-        setQuery("");
-        setGroup("all");
-        requestAnimationFrame(() => {
-          const topic = document.getElementById(id);
-          if (topic instanceof HTMLDetailsElement) {
-            topic.open = true;
-            topic.scrollIntoView({ block: "start" });
-          }
-        });
-      }
+    };
+    const requested = (event: Event) => {
+      if (event instanceof CustomEvent && typeof event.detail === "string")
+        openTopic(event.detail);
     };
     const timer = setTimeout(reveal, 0);
     window.addEventListener("hashchange", reveal);
+    window.addEventListener("kjm:guide-topic", requested);
     return () => {
       clearTimeout(timer);
       window.removeEventListener("hashchange", reveal);
+      window.removeEventListener("kjm:guide-topic", requested);
     };
-  }, []);
+  }, [openTopic]);
   const needle = query.trim().toLowerCase();
   const topics = ownerGuideTopics.filter(
     (topic) =>
@@ -95,7 +97,10 @@ export function OwnerGuide() {
             Read at your own pace. Opening the guide changes no booking, payment
             or setting.
           </span>
-          <Link href="#daily-checklist">
+          <Link
+            href="#daily-checklist"
+            onClick={() => openTopic("daily-checklist")}
+          >
             Jump to the daily checklist <ArrowUpRight size={15} />
           </Link>
         </div>

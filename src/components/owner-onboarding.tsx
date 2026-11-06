@@ -245,7 +245,12 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
             <Link
               href={`/dashboard/help#${step.topic}`}
               className="owner-guide-related"
-              onClick={close}
+              onClick={() => {
+                close();
+                window.dispatchEvent(
+                  new CustomEvent("kjm:guide-topic", { detail: step.topic }),
+                );
+              }}
             >
               <BookOpen size={15} />
               Full instructions for this topic <ArrowRight size={14} />
@@ -297,7 +302,14 @@ export default function OwnerOnboarding({ ownerId }: { ownerId: string }) {
             </p>
             <Link
               href="/dashboard/help#daily-checklist"
-              onClick={close}
+              onClick={() => {
+                close();
+                window.dispatchEvent(
+                  new CustomEvent("kjm:guide-topic", {
+                    detail: "daily-checklist",
+                  }),
+                );
+              }}
               className="owner-guide-primary"
             >
               Open the daily checklist
