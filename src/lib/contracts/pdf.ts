@@ -439,7 +439,7 @@ export async function renderRentalContract(
   at(acceptanceText, L + 15, y - 29, 8.4, regular, ink);
   at(
     data.acceptance
-      ? "The complete accepted terms follow. Signature images are not included."
+      ? "The complete accepted terms and any recorded electronic signature follow."
       : "This copy does not establish acceptance. Full terms are supplied for review.",
     L + 15,
     y - 45,
