@@ -181,8 +181,8 @@ export async function DeliverySettings({
         <>
           <h3 className="font-bold">Service areas</h3>
           <p className="text-xs text-slate-500">
-            Owner-configured fees in whole PHP, matching the existing booking
-            pricing format. No areas or fees are prefilled.
+            One combined delivery and pickup rate in whole PHP. For different
+            areas, the higher rate applies.
           </p>
           <div className="space-y-3">
             {a.data?.map((area) => (
@@ -216,23 +216,19 @@ function AreaForm({ area }: { area?: Area }) {
             className="mt-1 min-h-10 w-full rounded-lg border p-2"
           />
         </label>
-        {(["delivery_php", "collection_php"] as const).map((k) => (
-          <label key={k} className="text-xs">
-            {k === "delivery_php"
-              ? "Delivery Fee (PHP)"
-              : "Collection Fee (PHP)"}
-            <input
-              type="number"
-              required
-              min={0}
-              max={100000}
-              step={1}
-              name={k}
-              defaultValue={area?.[k]}
-              className="mt-1 min-h-10 w-full rounded-lg border p-2"
-            />
-          </label>
-        ))}
+        <label className="text-xs">
+          Combined delivery and pickup rate (PHP)
+          <input
+            type="number"
+            required
+            min={0}
+            max={100000}
+            step={1}
+            name="delivery_php"
+            defaultValue={area?.delivery_php}
+            className="mt-1 min-h-10 w-full rounded-lg border p-2"
+          />
+        </label>
         <div className="space-y-2">
           <label className="flex gap-2 text-xs">
             <input

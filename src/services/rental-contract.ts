@@ -22,6 +22,7 @@ export async function loadRentalContract(
     deposit,
     payments,
     acceptance,
+    signature,
   ] = await Promise.all([
     supabase
       .from("customers")
@@ -66,6 +67,11 @@ export async function loadRentalContract(
       .select("terms_version,source_sha256,accepted_at")
       .eq("booking_id", id)
       .maybeSingle(),
+    supabase
+      .from("booking_electronic_signatures")
+      .select("signature_name,signature_strokes,terms_version,signed_at,method")
+      .eq("booking_id", id)
+      .maybeSingle(),
   ]).then(checkedQueries);
   if (!customer.data)
     throw new ContractUnavailable("The renter details are unavailable.");
@@ -90,6 +96,7 @@ export async function loadRentalContract(
     deposit: deposit.data,
     payments: payments.data ?? [],
     acceptance: acceptance.data,
+    signature: signature.data,
     terms,
   };
 }

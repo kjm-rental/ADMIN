@@ -112,3 +112,25 @@ it("generates a paginated PDF with embedded fonts and all archived terms", async
     );
   }
 }, 20000);
+
+it("exports a drawn signature with the renter and accepted terms", async () => {
+  const sample = sampleRentalContract();
+  sample.signature = {
+    signature_name: "Sample Renter",
+    signature_strokes: [
+      [
+        { x: 0.1, y: 0.5 },
+        { x: 0.2, y: 0.2 },
+        { x: 0.3, y: 0.7 },
+        { x: 0.8, y: 0.4 },
+      ],
+    ],
+    method: "drawn",
+    signed_at: "2026-11-07T08:00:00Z",
+    terms_version: sample.terms.version,
+  };
+  const bytes = await renderRentalContract(sample);
+  const pdf = await PDFDocument.load(bytes);
+  expect(pdf.getPageCount()).toBeGreaterThan(4);
+  expect(Buffer.from(bytes).subarray(0, 5).toString()).toBe("%PDF-");
+});

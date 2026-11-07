@@ -93,6 +93,7 @@ export function sampleRentalContract(): RentalContractData {
       created_at: created,
     },
     payments: [{ event_type: "payment", amount_centavos: 131900 }],
+    signature: null,
     acceptance: {
       terms_version: "2026-10-12",
       source_sha256:

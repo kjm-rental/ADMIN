@@ -419,7 +419,7 @@ export async function renderRentalContract(
   const acceptanceText = data.acceptance
     ? `Accepted ${date(data.acceptance.accepted_at)} | Terms ${terms.version}`
     : `Draft for review | Terms ${terms.version}`;
-  const acceptanceHeight = 64;
+  const acceptanceHeight = data.signature ? 100 : 64;
   ensure(acceptanceHeight);
   page.drawRectangle({
     x: L,
@@ -447,10 +447,51 @@ export async function renderRentalContract(
     regular,
     muted,
   );
+  if (data.signature) {
+    at(
+      data.signature.method === "drawn"
+        ? "Drawn electronic signature recorded"
+        : "Typed electronic signature recorded",
+      L + 15,
+      y - 62,
+      8.4,
+      regular,
+      ink,
+    );
+    at(date(data.signature.signed_at), L + 15, y - 79, 7.8, regular, muted);
+  }
   y -= acceptanceHeight + 10;
 
   newPage("AGREEMENT DETAILS");
   flow("The details of your rental", 22, bold, teal, 9);
+  if (data.signature) {
+    flow(
+      `Electronically signed by: ${data.signature.signature_name}`,
+      10,
+      bold,
+      ink,
+    );
+    flow(
+      `${data.signature.method === "drawn" ? "Drawn signature" : "Typed full name"} | Signed ${date(data.signature.signed_at)} | Terms ${data.signature.terms_version}`,
+      9,
+      regular,
+      muted,
+    );
+  }
+  if (data.signature?.signature_strokes?.length) {
+    ensure(100);
+    for (const stroke of data.signature.signature_strokes) {
+      for (let i = 1; i < stroke.length; i++) {
+        page.drawLine({
+          start: { x: L + stroke[i - 1].x * 320, y: y - stroke[i - 1].y * 90 },
+          end: { x: L + stroke[i].x * 320, y: y - stroke[i].y * 90 },
+          thickness: 1.3,
+          color: ink,
+        });
+      }
+    }
+    y -= 105;
+  }
   flow(
     "Saved arrangements, pricing and agreement record",
     9.2,

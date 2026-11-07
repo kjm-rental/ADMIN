@@ -52,7 +52,7 @@ export async function saveDelivery(form: FormData) {
             .int()
             .min(0)
             .max(100000)
-            .parse(form.get("collection_php")),
+            .parse(form.get("delivery_php")),
           enabled: form.get("enabled") === "on",
         };
     result = await rpc("admin_save_delivery_area", {

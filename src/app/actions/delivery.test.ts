@@ -28,7 +28,7 @@ it("requires active admin before any change", async () => {
   await expect(saveDelivery(form())).rejects.toThrow("Administrator");
   expect(m.rpc).not.toHaveBeenCalled();
 });
-it("saves independent owner supplied fees through the authorized RPC", async () => {
+it("saves one combined owner rate for both service directions", async () => {
   await saveDelivery(form());
   expect(m.rpc).toHaveBeenCalledWith("admin_save_delivery_area", {
     p_id: null,
@@ -36,7 +36,7 @@ it("saves independent owner supplied fees through the authorized RPC", async () 
     p_values: {
       name: "Owner entered area",
       delivery_php: 200,
-      collection_php: 400,
+      collection_php: 200,
       enabled: true,
     },
   });

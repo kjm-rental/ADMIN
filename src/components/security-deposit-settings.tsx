@@ -1,9 +1,6 @@
 import { ActionForm } from "@/components/action-form";
 import { ConfirmButton } from "@/components/confirm-button";
-import {
-  saveSecurityDepositSettings,
-  setIdDepositEnabled,
-} from "@/app/actions/security-deposits";
+import { saveSecurityDepositSettings } from "@/app/actions/security-deposits";
 import type { DepositSettings } from "@/types/rental";
 export function SecurityDepositSettings({
   settings,
@@ -31,34 +28,10 @@ export function SecurityDepositSettings({
         </p>
       ) : (
         <>
-          <ActionForm
-            action={setIdDepositEnabled}
-            className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-slate-50 p-5"
-            successMessage="ID deposit setting saved."
-          >
-            <div>
-              <h3 className="font-bold text-deep-teal">ID deposit</h3>
-              <p className="mt-1 text-sm text-slate-500">
-                {settings?.id_enabled
-                  ? "Enabled — customers can leave an original ID instead of a cash deposit."
-                  : "Disabled — ID deposit is not offered at checkout."}
-              </p>
-            </div>
-            <input
-              type="hidden"
-              name="enabled"
-              value={settings?.id_enabled ? "false" : "true"}
-            />
-            <button
-              type="submit"
-              className="admin-button"
-              aria-pressed={settings?.id_enabled ?? false}
-            >
-              {settings?.id_enabled
-                ? "Disable ID deposit"
-                : "Enable ID deposit"}
-            </button>
-          </ActionForm>
+          <p className="mt-6 text-sm text-slate-600">
+            Cash security deposits only. Customers never leave or surrender
+            original IDs.
+          </p>
           <ActionForm
             action={saveSecurityDepositSettings}
             className="mt-6 grid gap-5 sm:grid-cols-2"

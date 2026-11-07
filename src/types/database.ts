@@ -20,6 +20,19 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booking_electronic_signatures: {
+        Row: {
+          booking_id: string;
+          signature_strokes: { x: number; y: number }[][] | null;
+          signature_name: string;
+          terms_version: string;
+          signed_at: string;
+          method: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       booking_terms_acceptances: {
         Row: {
           booking_id: string;
