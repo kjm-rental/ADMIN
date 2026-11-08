@@ -1,4 +1,5 @@
 import { DownloadRentalContract } from "@/components/download-rental-contract";
+import { BookingSignature } from "@/components/booking-signature";
 import { normalizeMotorcycleColor } from "@/lib/motorcycle-color";
 import { ManualBookingManagement } from "@/components/manual-booking-management";
 import { getLivePaymentContext } from "@/services/live-payment-status";
@@ -74,6 +75,7 @@ export default async function BookingPage({
     { data: holds },
     { data: extras },
     { data: paymentEvents },
+    { data: signature },
   ] = await Promise.all([
     supabase.from("customers").select("*").eq("id", b.customer_id).single(),
     supabase
@@ -107,6 +109,11 @@ export default async function BookingPage({
       .select("*")
       .eq("booking_id", id)
       .order("occurred_at", { ascending: false }),
+    supabase
+      .from("booking_electronic_signatures")
+      .select("*")
+      .eq("booking_id", id)
+      .maybeSingle(),
   ]).then(checkedQueries);
   const paidCentavos = (paymentEvents ?? []).reduce(
     (sum, event) =>
@@ -545,6 +552,7 @@ export default async function BookingPage({
               />
             </dl>
           </section>
+          <BookingSignature signature={signature} />
           <BookingPaymentReview bookingId={id} />
           <BookingServiceDetails
             data={service}
