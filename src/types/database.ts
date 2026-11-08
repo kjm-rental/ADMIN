@@ -24,6 +24,7 @@ export type Database = {
         Row: {
           booking_id: string;
           signature_strokes: { x: number; y: number }[][] | null;
+          signature_image_base64: string | null;
           signature_name: string;
           terms_version: string;
           signed_at: string;

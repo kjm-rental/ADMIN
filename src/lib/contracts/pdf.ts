@@ -472,7 +472,7 @@ export async function renderRentalContract(
       ink,
     );
     flow(
-      `${data.signature.method === "drawn" ? "Drawn signature" : "Typed full name"} | Signed ${date(data.signature.signed_at)} | Terms ${data.signature.terms_version}`,
+      `${data.signature.method === "uploaded" ? "Uploaded signature" : data.signature.method === "drawn" ? "Drawn signature" : "Typed full name"} | Signed ${date(data.signature.signed_at)} | Terms ${data.signature.terms_version}`,
       9,
       regular,
       muted,
@@ -491,6 +491,20 @@ export async function renderRentalContract(
       }
     }
     y -= 105;
+  }
+  if (
+    data.signature?.method === "uploaded" &&
+    data.signature.signature_image_base64
+  ) {
+    const signature = await pdf.embedPng(
+      Buffer.from(data.signature.signature_image_base64, "base64"),
+    );
+    const scale = Math.min(320 / signature.width, 100 / signature.height, 1);
+    const width = signature.width * scale,
+      height = signature.height * scale;
+    ensure(height + 15);
+    page.drawImage(signature, { x: L, y: y - height, width, height });
+    y -= height + 15;
   }
   flow(
     "Saved arrangements, pricing and agreement record",

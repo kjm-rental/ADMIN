@@ -69,7 +69,9 @@ export async function loadRentalContract(
       .maybeSingle(),
     supabase
       .from("booking_electronic_signatures")
-      .select("signature_name,signature_strokes,terms_version,signed_at,method")
+      .select(
+        "signature_name,signature_strokes,signature_image_base64,terms_version,signed_at,method",
+      )
       .eq("booking_id", id)
       .maybeSingle(),
   ]).then(checkedQueries);

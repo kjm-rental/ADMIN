@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { PDFDocument, StandardFonts } from "pdf-lib";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { renderRentalContract, wrapContractText } from "./pdf";
 import { sampleRentalContract } from "./fixture";
@@ -126,6 +126,7 @@ it("exports a drawn signature with the renter and accepted terms", async () => {
       ],
     ],
     method: "drawn",
+    signature_image_base64: null,
     signed_at: "2026-11-07T08:00:00Z",
     terms_version: sample.terms.version,
   };
@@ -133,4 +134,29 @@ it("exports a drawn signature with the renter and accepted terms", async () => {
   const pdf = await PDFDocument.load(bytes);
   expect(pdf.getPageCount()).toBeGreaterThan(4);
   expect(Buffer.from(bytes).subarray(0, 5).toString()).toBe("%PDF-");
+});
+it("embeds the uploaded signature image in the contract", async () => {
+  const sample = sampleRentalContract();
+  const image = await readFile(
+    path.join(process.cwd(), "src/lib/contracts/fixtures/signature.png"),
+  );
+  sample.signature = {
+    signature_name: "Sample Renter",
+    signature_strokes: null,
+    signature_image_base64: image.toString("base64"),
+    method: "uploaded",
+    signed_at: "2026-11-08T05:00:00Z",
+    terms_version: sample.terms.version,
+  };
+  const bytes = await renderRentalContract(sample);
+  const pdf = await PDFDocument.load(bytes);
+  expect(pdf.getPageCount()).toBeGreaterThan(4);
+  expect(Buffer.from(bytes).subarray(0, 5).toString()).toBe("%PDF-");
+  if (process.env.KJM_CONTRACT_PREVIEW_DIR) {
+    await mkdir(process.env.KJM_CONTRACT_PREVIEW_DIR, { recursive: true });
+    await writeFile(
+      path.join(process.env.KJM_CONTRACT_PREVIEW_DIR, "uploaded-signature.pdf"),
+      bytes,
+    );
+  }
 });
