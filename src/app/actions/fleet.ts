@@ -150,9 +150,6 @@ export async function saveModel(formData: FormData) {
     specification_note: d.specificationNote,
     specification_source_url: d.specificationSourceUrl,
     daily_rate_php: d.dailyRate,
-    ...(formData.has("hourlyRate") && (d.id || d.hourlyRate != null)
-      ? { hourly_extension_rate_php: d.hourlyRate ?? null }
-      : {}),
     is_published: d.published === "on",
     description: d.description,
     notable_features: d.features

@@ -45,15 +45,19 @@ export function adjustedRental(
               (standard * (10000 - Math.round(a.value * 100))) / 10000,
             );
   if (
-    !Number.isSafeInteger(standard) ||
+    !Number.isSafeInteger(Math.round(standard * 100)) ||
     standard < 0 ||
     final < 0 ||
-    !Number.isSafeInteger(final)
+    !Number.isSafeInteger(Math.round(final * 100))
   )
     throw Error(
       "The final rental price cannot be negative or outside the supported range.",
     );
-  return { standard, adjustment: final - standard, final };
+  return {
+    standard,
+    adjustment: Math.round((final - standard) * 100) / 100,
+    final,
+  };
 }
 const legSchema = z.object({
   areaId: z.uuid(),
@@ -95,7 +99,7 @@ export const manualBookingSchema = z
     notes: z.string().trim().max(2000),
     action: z.enum(["pending", "confirmed"]),
     confirmationReason: z.string().trim().max(500),
-    expectedTotal: z.number().int().nonnegative().optional(),
+    expectedTotal: z.number().nonnegative().multipleOf(0.01).optional(),
     quoteToken: z.string().optional(),
   })
   .superRefine((d, ctx) => {

@@ -92,9 +92,7 @@ export async function saveBookingSettings(formData: FormData) {
     .from("booking_settings")
     .update({
       ...candidate,
-      ...(formData.has("maxHourlyExtensionHours")
-        ? { max_hourly_extension_hours: d.maxHourlyExtensionHours ?? null }
-        : {}),
+      max_hourly_extension_hours: 2,
       public_booking_enabled:
         requestedEnable && approved && !missing.length && technicalReady,
       policies_approved_at:

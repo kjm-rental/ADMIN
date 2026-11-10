@@ -206,35 +206,12 @@ export function BookingSettingsForm({
           <legend className="font-extrabold text-deep-teal">
             Hourly extension policy
           </legend>
-          <label className="mt-3 block text-sm font-bold">
-            Maximum hourly extension after complete 24-hour periods
-            <input
-              name="maxHourlyExtensionHours"
-              type="number"
-              min="0"
-              max="23"
-              step="1"
-              defaultValue={settings?.max_hourly_extension_hours ?? ""}
-              disabled={settings?.max_hourly_extension_hours === undefined}
-              placeholder="Not selected — preserve current billing"
-              className="mt-2 min-h-11 w-full rounded-xl border px-3"
-            />
-          </label>
-          <p className="mt-2 text-xs leading-relaxed text-slate-500">
-            Leave blank to preserve current billing. Save 0 to bill every
-            additional period as a complete rental day, or 1–23 to permit hourly
-            extensions up to that many hours. Beyond this limit, the extension
-            is not permitted; choose a complete rental period instead (requires
-            migration 034). Partial hours round up to the next hour; hourly
-            charges never exceed that next period. Minimum rental: 24 hours.
-            Requires “started 24 hours” day calculation. Changes apply to new
-            quotes, not saved bookings.
+          <p className="mt-3 text-sm leading-relaxed">
+            10% of the motorcycle’s daily rate per started hour, for a maximum
+            of 2 hours. Any extension over 2 hours is automatically billed as
+            another full rental day. Partial hours round up. Minimum rental: 24
+            hours. Existing booking prices are preserved.
           </p>
-          {settings?.max_hourly_extension_hours === undefined && (
-            <p className="mt-2 text-xs text-amber-800">
-              Apply reviewed migration 032 before configuring this policy.
-            </p>
-          )}
         </fieldset>
         <fieldset className="admin-settings-fields">
           <legend className="font-extrabold text-deep-teal">

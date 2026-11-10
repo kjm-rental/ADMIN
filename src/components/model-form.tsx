@@ -61,7 +61,7 @@ export function ModelForm({
       </Panel>
       <Panel
         title="Pricing"
-        description="Store all amounts as whole Philippine pesos."
+        description="Daily and package rates are entered in pesos. Hourly extension rates are calculated automatically."
       >
         <Field
           label="Daily rate (PHP)"
@@ -72,20 +72,11 @@ export function ModelForm({
           step="1"
           value={model?.daily_rate_php}
         />
-        <Field
-          label="Hourly Extension Rate (PHP)"
-          name="hourlyRate"
-          type="number"
-          min="1"
-          step="1"
-          value={model?.hourly_extension_rate_php}
-          disabled={!!model && model.hourly_extension_rate_php === undefined}
-        />
-        {model && model.hourly_extension_rate_php === undefined && (
-          <p className="text-xs text-amber-800">
-            Hourly rate saving requires migration 032.
-          </p>
-        )}
+        <p className="text-sm text-slate-600">
+          Hourly extensions are automatically 10% of the daily rate per started
+          hour, up to 2 hours. More than 2 hours is billed as another full
+          rental day.
+        </p>
         <Field
           label="Weekly rate (optional)"
           name="weeklyRate"

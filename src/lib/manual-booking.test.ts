@@ -102,6 +102,17 @@ describe("admin reservation validation", () => {
   });
 });
 describe("booking-only adjustments", () => {
+  it("preserves a fractional standard rental for automatic hourly pricing", () => {
+    expect(
+      adjustedRental(548.9, { kind: "none", value: 0, reason: "" }),
+    ).toEqual({ standard: 548.9, adjustment: 0, final: 548.9 });
+    expect(
+      manualBookingSchema.safeParse({
+        ...validManualBooking(),
+        expectedTotal: 548.9,
+      }).success,
+    ).toBe(true);
+  });
   it.each([
     ["none", 0, 3800],
     ["fixed", 300, 3500],
